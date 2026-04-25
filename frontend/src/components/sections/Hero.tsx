@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, ChevronDown, Download } from "lucide-react";
 import { downloadResume } from "@/lib/resume";
+import { TypeAnimation } from "react-type-animation";
 
 export function Hero() {
   return (
@@ -16,22 +17,39 @@ export function Hero() {
         {/* LEFT — copy (compact) */}
         <div className="space-y-5 min-w-0 max-w-[480px]">
           <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.1 }}
-            className="text-cyan-400 font-semibold tracking-[0.3em] text-xs uppercase"
-          >
-            Hi, I'm Ambar
-          </motion.p>
+  initial={{ opacity: 0, y: 16 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.7, delay: 0.1 }}
+  className="font-semibold tracking-[0.3em] text-xs uppercase"
+>
+  <span className="text-white">
+    Hi, I'm{" "}
+  </span>
+  <span className="text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]">
+    Ambar
+  </span>
+</motion.p>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="font-black text-white leading-[0.95] tracking-tight text-[clamp(2.25rem,5.5vw,4.25rem)]"
-          >
-            DEVELOPER<span className="text-cyan-400">.</span>
-          </motion.h1>
+{/* Typing Heading */}
+<motion.h1
+  initial={{ opacity: 0, y: 24 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.8, delay: 0.2 }}
+  className="font-black text-white leading-[1.1] tracking-tight text-[clamp(1.8rem,4.5vw,3.2rem)]"
+>
+  <TypeAnimation
+    sequence={[
+      "FULL STACK DEVELOPER", 2000,
+      "AI BUILDER", 2000,
+      "PROBLEM SOLVER", 2500,
+    ]}
+    wrapper="span"
+    speed={30}
+    repeat={Infinity}
+    cursor={false}   // remove extra cursor
+  />
+  <span className="text-cyan-400 animate-pulse">|</span>
+</motion.h1>
 
           <motion.h2
             initial={{ opacity: 0, y: 16 }}
@@ -39,8 +57,8 @@ export function Hero() {
             transition={{ duration: 0.8, delay: 0.35 }}
             className="text-lg sm:text-xl font-bold text-white tracking-tight leading-snug"
           >
-            I BUILD DIGITAL EXPERIENCES <br className="hidden sm:block" />
-            THAT <span className="text-cyan-400">INSPIRE</span>
+            I BUILD SCALABLE DIGITAL EXPERIENCES <br className="hidden sm:block" />
+            THAT <span className="text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]">SOLVE REAL PROBLEMS</span>
           </motion.h2>
 
           <motion.p
@@ -49,8 +67,7 @@ export function Hero() {
             transition={{ duration: 0.8, delay: 0.5 }}
             className="text-sm sm:text-base text-white/60 leading-relaxed max-w-md"
           >
-            Beautiful, functional, user-centered products built with clean
-            code and modern technologies.
+           Full Stack Developer crafting scalable apps, real-time systems, and AI-powered experiences with modern technologies.
           </motion.p>
 
           <motion.div

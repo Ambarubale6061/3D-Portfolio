@@ -28,83 +28,97 @@ const categories: {
   accent: string;
   skills: Skill[];
   tech: Tech[];
-}[] = [
+}[]  = [
   {
     title: "Frontend",
-    blurb: "Pixel-perfect, motion-driven user interfaces.",
+    blurb: "Building responsive and user-friendly interfaces.",
     icon: Atom,
     accent: "from-cyan-400 to-blue-500",
     skills: [
-      { name: "React / Next.js", level: 95 },
-      { name: "TypeScript", level: 92 },
-      { name: "Tailwind CSS", level: 95 },
-      { name: "Three.js / R3F", level: 85 },
+      { name: "React", level: 90 },
+      { name: "TypeScript", level: 85 },
+      { name: "JavaScript (ES6+)", level: 90 },
+      { name: "Tailwind CSS", level: 92 },
+      { name: "Next.js", level: 80 },
+      { name: "Responsive Design", level: 88 },
     ],
     tech: [
       { name: "React", Icon: Atom },
       { name: "Next.js", Icon: Layers },
       { name: "TypeScript", Icon: FileCode },
+      { name: "JavaScript", Icon: FileCode },
       { name: "Tailwind", Icon: Sparkles },
-      { name: "Three.js", Icon: Cpu },
       { name: "Vite", Icon: Wrench },
+      { name: "Framer Motion", Icon: Sparkles },
     ],
   },
   {
     title: "Backend",
-    blurb: "APIs, services, and infrastructure that scale.",
+    blurb: "Developing scalable APIs and server-side logic.",
     icon: Server,
     accent: "from-emerald-400 to-teal-500",
     skills: [
-      { name: "Node.js / Express", level: 92 },
-      { name: "Java / Spring Boot", level: 88 },
-      { name: "GraphQL / REST", level: 90 },
-      { name: "Microservices", level: 85 },
+      { name: "Node.js / Express", level: 88 },
+      { name: "Java / Spring Boot", level: 82 },
+      { name: "Python / Flask", level: 75 },
+      { name: "REST APIs", level: 90 },
+      { name: "Authentication / JWT", level: 85 },
+      { name: "API Integration", level: 88 },
+      { name: "Error Handling", level: 85 },
     ],
     tech: [
       { name: "Node.js", Icon: Server },
-      { name: "Spring", Icon: Boxes },
-      { name: "Python", Icon: Terminal },
-      { name: "GraphQL", Icon: Globe },
-      { name: "Docker", Icon: Container },
+      { name: "Express", Icon: Server },
+      { name: "Java", Icon: Cpu },
+      { name: "Flask", Icon: Container },
+      { name: "Python", Icon: FileCode },
+      { name: "Spring Boot", Icon: Boxes },
+      { name: "MongoDB", Icon: Database },
+      { name: "Firebase", Icon: Cloud },
+      { name: "Postman", Icon: Wrench },
       { name: "Git", Icon: GitBranch },
     ],
   },
   {
-    title: "Data",
-    blurb: "Relational, document, and vector databases tuned for speed.",
+    title: "Database",
+    blurb: "Managing structured and real-time data systems.",
     icon: Database,
     accent: "from-violet-400 to-fuchsia-500",
     skills: [
-      { name: "PostgreSQL", level: 90 },
       { name: "MongoDB", level: 88 },
-      { name: "Redis", level: 82 },
-      { name: "Supabase / Vector DBs", level: 85 },
+      { name: "PostgreSQL", level: 82 },
+      { name: "Supabase", level: 85 },
+      { name: "Firebase", level: 80 },
+      { name: "Database Design", level: 82 },
+      { name: "CRUD Operations", level: 90 },
     ],
     tech: [
-      { name: "Postgres", Icon: Database },
       { name: "MongoDB", Icon: Database },
-      { name: "Redis", Icon: Database },
+      { name: "Postgres", Icon: Database },
       { name: "Supabase", Icon: Boxes },
-      { name: "AWS", Icon: Cloud },
+      { name: "Firebase", Icon: Cloud },
+      { name: "SQL", Icon: Terminal },
     ],
   },
   {
-    title: "AI / ML",
-    blurb: "LLM pipelines, agents, and retrieval systems in production.",
+    title: "AI Integration",
+    blurb: "Adding simple AI features into applications.",
     icon: Brain,
     accent: "from-amber-400 to-orange-500",
     skills: [
-      { name: "LLM Pipelines", level: 90 },
-      { name: "OpenAI / Anthropic", level: 92 },
-      { name: "Vector Search", level: 85 },
-      { name: "Prompt Engineering", level: 90 },
+      { name: "OpenAI APIs", level: 75 },
+      { name: "Prompt Engineering", level: 78 },
+      { name: "API Integration", level: 85 },
+      { name: "Chatbot Features", level: 80 },
+      { name: "Basic AI Workflows", level: 75 },
+      { name: "RAG", level: 70 },
     ],
     tech: [
       { name: "OpenAI", Icon: Brain },
-      { name: "Anthropic", Icon: Sparkles },
-      { name: "LangChain", Icon: Boxes },
-      { name: "Pinecone", Icon: Database },
-      { name: "Python", Icon: Terminal },
+      { name: "APIs", Icon: Globe },
+      { name: "Node.js", Icon: Server },
+      { name: "JavaScript", Icon: FileCode },
+      
     ],
   },
 ];
@@ -121,15 +135,19 @@ export function Skills() {
         className="text-center mb-14"
       >
         <p className="text-cyan-400 font-mono text-xs tracking-[0.3em] uppercase mb-3">
-          / Skills &amp; Tech
-        </p>
-        <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight">
-          Tools of the <span className="text-gradient-primary">Trade</span>
-        </h2>
-        <p className="text-white/55 mt-5 max-w-2xl mx-auto text-sm sm:text-lg">
-          Proficiency, stack, and the technologies I reach for daily — all in
-          one place.
-        </p>
+  / Skills & Expertise
+</p>
+
+<h2 className="text-3xl sm:text-4xl lg:text-4xl font-black text-white tracking-tight">
+  Building with{" "}
+  <span className="text-cyan-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.7)]">
+    Modern Technologies
+  </span>
+</h2>
+
+<p className="text-white/55 mt-5 max-w-2xl mx-auto text-sm sm:text-lg">
+  Technologies, tools, and skills I use to build scalable, high-performance applications.
+</p>
       </motion.div>
 
       {/* Robot anchor (subtle, top-right) */}
@@ -137,7 +155,7 @@ export function Skills() {
         className="hidden lg:block absolute top-12 right-0 w-[260px] h-[260px] pointer-events-none"
         data-robot-anchor="skills"
         data-robot-side="left"
-        data-robot-prompt="React, Node, Spring, AI — here's the full toolbelt."
+        data-robot-prompt="Frontend, Backend, Databases, and AI — this is how I build complete applications."
       />
 
       {/* Unified category grid */}
@@ -206,8 +224,8 @@ export function Skills() {
               {/* Tech chips */}
               <div className="pt-4 border-t border-white/5">
                 <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/40 mb-2.5">
-                  Stack
-                </p>
+  Technologies
+</p>
                 <div className="flex flex-wrap gap-1.5">
                   {cat.tech.map((t) => {
                     const TIcon = t.Icon;

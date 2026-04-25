@@ -14,26 +14,37 @@ if (typeof window !== "undefined") {
   });
 }
 
-const WHITE = "#f3f4f6";
-const DARK = "#0a0d14";
-const ACCENT = "#22d3ee";
-const ACCENT_SOFT = "#38bdf8";
+// Colors matching the image exactly
+const WHITE = "#e8eef5";        // slightly blue-tinted white for the shell
+const SHELL_DARK = "#c8d4e0";   // slightly darker white for depth
+const FACE_DARK = "#0d1b3e";    // deep navy blue for the face plate
+const ACCENT = "#00d4ff";       // bright cyan for glowing elements
+const ACCENT_SOFT = "#7eeeff";  // soft cyan for inner eye glow
+const ACCENT_MID = "#00aadd";   // mid cyan for smile
+const FOREHEAD = "#111827";     // dark forehead panel
 
 export function Robot({ scale = 1, pulseKey }: { scale?: number; pulseKey?: string | number }) {
   const root = useRef<THREE.Group>(null);
   const head = useRef<THREE.Group>(null);
-  const eyeL = useRef<THREE.Mesh>(null);
-  const eyeR = useRef<THREE.Mesh>(null);
+  const eyeScaleL = useRef<THREE.Mesh>(null);
+  const eyeScaleR = useRef<THREE.Mesh>(null);
+  const eyeInnerL = useRef<THREE.Mesh>(null);
+  const eyeInnerR = useRef<THREE.Mesh>(null);
+  const eyeTorusL = useRef<THREE.Mesh>(null);
+  const eyeTorusR = useRef<THREE.Mesh>(null);
   const armL = useRef<THREE.Group>(null);
   const armR = useRef<THREE.Group>(null);
-  const visor = useRef<THREE.MeshStandardMaterial>(null);
   const ringOuter = useRef<THREE.Mesh>(null);
   const ringInner = useRef<THREE.Mesh>(null);
   const ringMatOuter = useRef<THREE.MeshBasicMaterial>(null);
   const ringMatInner = useRef<THREE.MeshBasicMaterial>(null);
   const pulseStart = useRef<number>(-999);
-  const { size } = useThree();
   const localMouse = useRef({ x: 0, y: 0 });
+  
+  // Blink state
+  const lastBlinkTime = useRef<number>(0);
+  const blinkDuration = 0.18; // seconds for full blink cycle
+  const blinkInterval = 3.0;  // blink every 3 seconds
 
   useEffect(() => {
     pulseStart.current = performance.now() / 1000;
@@ -41,8 +52,6 @@ export function Robot({ scale = 1, pulseKey }: { scale?: number; pulseKey?: stri
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
-      const rect = (e.target as HTMLElement)?.getBoundingClientRect?.();
-      // Normalize against full window for consistent global tracking
       localMouse.current.x = (e.clientX / window.innerWidth) * 2 - 1;
       localMouse.current.y = -((e.clientY / window.innerHeight) * 2 - 1);
     };
@@ -55,37 +64,57 @@ export function Robot({ scale = 1, pulseKey }: { scale?: number; pulseKey?: stri
     const mx = localMouse.current.x;
     const my = localMouse.current.y;
 
+    // Head follows cursor
     if (head.current) {
-      // Look at cursor
-      const targetY = mx * 0.7;
-      const targetX = -my * 0.5;
-      head.current.rotation.y += (targetY - head.current.rotation.y) * 0.1;
-      head.current.rotation.x += (targetX - head.current.rotation.x) * 0.1;
-      head.current.rotation.z = Math.sin(t * 0.8) * 0.02;
-    }
-    if (root.current) {
-      // Subtle body sway following cursor
-      root.current.rotation.y += (mx * 0.25 - root.current.rotation.y) * 0.05;
-      root.current.position.y = Math.sin(t * 1.2) * 0.06;
-    }
-    if (eyeL.current && eyeR.current) {
-      const ox = mx * 0.04;
-      const oy = my * 0.03;
-      eyeL.current.position.x = -0.18 + ox;
-      eyeR.current.position.x = 0.18 + ox;
-      eyeL.current.position.y = 0.05 + oy;
-      eyeR.current.position.y = 0.05 + oy;
-    }
-    if (visor.current) {
-      const pulse = 0.7 + Math.sin(t * 2.4) * 0.25;
-      visor.current.emissiveIntensity = pulse;
-    }
-    if (armL.current && armR.current) {
-      armL.current.rotation.x = Math.sin(t * 1.3) * 0.08 - 0.1;
-      armR.current.rotation.x = -Math.sin(t * 1.3) * 0.08 - 0.1;
+      const targetY = mx * 0.55;
+      const targetX = -my * 0.4;
+      head.current.rotation.y += (targetY - head.current.rotation.y) * 0.08;
+      head.current.rotation.x += (targetX - head.current.rotation.x) * 0.08;
+      head.current.rotation.z = Math.sin(t * 0.7) * 0.015;
     }
 
-    // Holographic landing pulse — outer expands & fades, inner gives a quick flash
+    // Subtle body sway
+    if (root.current) {
+      root.current.rotation.y += (mx * 0.15 - root.current.rotation.y) * 0.04;
+      root.current.position.y = Math.sin(t * 1.1) * 0.05;
+    }
+
+    // Arm swing
+    if (armL.current && armR.current) {
+      armL.current.rotation.x = Math.sin(t * 1.2) * 0.07 - 0.1;
+      armR.current.rotation.x = -Math.sin(t * 1.2) * 0.07 - 0.1;
+    }
+
+    // ── Blink animation ──
+    // scaleY of eye meshes: 1 = open, ~0.05 = closed
+    let blinkScaleY = 1.0;
+    const timeSinceBlink = t - lastBlinkTime.current;
+
+    if (timeSinceBlink >= blinkInterval) {
+      const blinkT = timeSinceBlink - blinkInterval;
+      if (blinkT < blinkDuration) {
+        // Smooth close then open using sine curve
+        const progress = blinkT / blinkDuration;
+        // Goes 0 → 1 → 0 mapped to open → closed → open
+        blinkScaleY = 1.0 - Math.sin(progress * Math.PI) * 0.97;
+      } else {
+        // Blink done, reset timer
+        lastBlinkTime.current = t;
+      }
+    }
+
+    // Apply blink scale to eye meshes (scaleY only — squish vertically)
+    const applyBlink = (mesh: THREE.Mesh | null) => {
+      if (mesh) mesh.scale.y = blinkScaleY;
+    };
+    applyBlink(eyeScaleL.current);
+    applyBlink(eyeScaleR.current);
+    applyBlink(eyeInnerL.current);
+    applyBlink(eyeInnerR.current);
+    applyBlink(eyeTorusL.current);
+    applyBlink(eyeTorusR.current);
+
+    // Landing pulse rings
     const dt = t - pulseStart.current;
     if (ringOuter.current && ringMatOuter.current) {
       if (dt >= 0 && dt < 1.4) {
@@ -110,149 +139,177 @@ export function Robot({ scale = 1, pulseKey }: { scale?: number; pulseKey?: stri
   });
 
   return (
-    <group ref={root} scale={scale} position={[0, -0.4, 0]}>
-      {/* Head */}
-      <group ref={head} position={[0, 1.1, 0]}>
-        {/* Skull */}
+    <group ref={root} scale={scale} position={[0, -0.3, 0]}>
+      {/* ── HEAD GROUP ── */}
+      <group ref={head} position={[0, 0.95, 0]}>
+
+        {/* Main skull — large, round, slightly flattened sphere */}
         <mesh castShadow>
-          <sphereGeometry args={[0.85, 64, 64]} />
+          <sphereGeometry args={[1.0, 64, 64]} />
           <meshPhysicalMaterial
             color={WHITE}
-            roughness={0.25}
-            metalness={0.2}
-            clearcoat={1}
-            clearcoatRoughness={0.15}
+            roughness={0.18}
+            metalness={0.15}
+            clearcoat={1.0}
+            clearcoatRoughness={0.1}
           />
         </mesh>
-        {/* Antenna */}
-        <mesh position={[0, 0.95, 0]}>
-          <cylinderGeometry args={[0.025, 0.025, 0.35, 16]} />
-          <meshStandardMaterial color={DARK} metalness={0.6} roughness={0.4} />
+
+        {/* Small forehead panel (rectangular dark strip at top) */}
+        <mesh position={[0, 0.62, 0.85]}>
+          <boxGeometry args={[0.32, 0.14, 0.06]} />
+          <meshStandardMaterial color={FOREHEAD} metalness={0.6} roughness={0.4} />
         </mesh>
-        <mesh position={[0, 1.18, 0]}>
-          <sphereGeometry args={[0.07, 24, 24]} />
-          <meshStandardMaterial
-            color={ACCENT}
-            emissive={ACCENT}
-            emissiveIntensity={1.5}
-          />
+        {/* Forehead panel subtle accent line */}
+        <mesh position={[0, 0.62, 0.91]}>
+          <boxGeometry args={[0.22, 0.03, 0.02]} />
+          <meshBasicMaterial color={ACCENT} toneMapped={false} transparent opacity={0.6} />
         </mesh>
-        {/* Visor (face plate) */}
-        <mesh position={[0, 0.05, 0.55]}>
-          <boxGeometry args={[1.05, 0.55, 0.6]} />
+
+        {/* ── FACE PLATE — wide rounded dark visor ── */}
+        {/* Large rounded rectangle face area — deep navy */}
+        <mesh position={[0, -0.08, 0.72]}>
+          <boxGeometry args={[1.35, 0.78, 0.58]} />
           <meshPhysicalMaterial
-            ref={visor}
-            color={DARK}
-            metalness={0.9}
-            roughness={0.05}
+            color={FACE_DARK}
+            metalness={0.85}
+            roughness={0.08}
             clearcoat={1}
-            emissive={ACCENT}
-            emissiveIntensity={0.4}
           />
         </mesh>
-        {/* Eyes (glowing rings) */}
-        <mesh ref={eyeL} position={[-0.18, 0.05, 0.86]}>
-          <torusGeometry args={[0.13, 0.035, 16, 48]} />
+        {/* Round the face plate with a slightly larger sphere mask — achieved via front sphere cap */}
+        <mesh position={[0, -0.08, 0.82]}>
+          <sphereGeometry args={[0.78, 48, 48, 0, Math.PI * 2, 0, Math.PI * 0.55]} />
+          <meshPhysicalMaterial
+            color={FACE_DARK}
+            metalness={0.85}
+            roughness={0.08}
+            clearcoat={1}
+          />
+        </mesh>
+
+        {/* ── LEFT EYE ── */}
+        {/* Outer glow ring */}
+        <mesh ref={eyeTorusL} position={[-0.3, 0.0, 0.92]}>
+          <torusGeometry args={[0.185, 0.028, 16, 64]} />
           <meshBasicMaterial color={ACCENT} toneMapped={false} />
         </mesh>
-        <mesh ref={eyeR} position={[0.18, 0.05, 0.86]}>
-          <torusGeometry args={[0.13, 0.035, 16, 48]} />
+        {/* Main eye disc — solid dark center with cyan rim */}
+        <mesh ref={eyeScaleL} position={[-0.3, 0.0, 0.93]}>
+          <circleGeometry args={[0.16, 48]} />
+          <meshBasicMaterial color={FACE_DARK} toneMapped={false} />
+        </mesh>
+        {/* Inner glow disc */}
+        <mesh ref={eyeInnerL} position={[-0.3, 0.0, 0.935]}>
+          <circleGeometry args={[0.09, 48]} />
+          <meshBasicMaterial color={ACCENT_SOFT} toneMapped={false} transparent opacity={0.85} />
+        </mesh>
+        {/* Core bright dot */}
+        <mesh position={[-0.3, 0.0, 0.94]}>
+          <circleGeometry args={[0.04, 32]} />
+          <meshBasicMaterial color={"#ffffff"} toneMapped={false} transparent opacity={0.9} />
+        </mesh>
+
+        {/* ── RIGHT EYE ── */}
+        <mesh ref={eyeTorusR} position={[0.3, 0.0, 0.92]}>
+          <torusGeometry args={[0.185, 0.028, 16, 64]} />
           <meshBasicMaterial color={ACCENT} toneMapped={false} />
         </mesh>
-        {/* Eye inner glow */}
-        <mesh position={[-0.18, 0.05, 0.85]}>
-          <circleGeometry args={[0.09, 32]} />
-          <meshBasicMaterial color={ACCENT_SOFT} toneMapped={false} transparent opacity={0.55} />
+        <mesh ref={eyeScaleR} position={[0.3, 0.0, 0.93]}>
+          <circleGeometry args={[0.16, 48]} />
+          <meshBasicMaterial color={FACE_DARK} toneMapped={false} />
         </mesh>
-        <mesh position={[0.18, 0.05, 0.85]}>
-          <circleGeometry args={[0.09, 32]} />
-          <meshBasicMaterial color={ACCENT_SOFT} toneMapped={false} transparent opacity={0.55} />
+        <mesh ref={eyeInnerR} position={[0.3, 0.0, 0.935]}>
+          <circleGeometry args={[0.09, 48]} />
+          <meshBasicMaterial color={ACCENT_SOFT} toneMapped={false} transparent opacity={0.85} />
         </mesh>
-        {/* Smile */}
-        <mesh position={[0, -0.22, 0.86]} rotation={[0, 0, 0]}>
-          <torusGeometry args={[0.12, 0.018, 12, 24, Math.PI]} />
+        <mesh position={[0.3, 0.0, 0.94]}>
+          <circleGeometry args={[0.04, 32]} />
+          <meshBasicMaterial color={"#ffffff"} toneMapped={false} transparent opacity={0.9} />
+        </mesh>
+
+        {/* ── SMILE — upward arc ── */}
+        {/* Main smile arc */}
+        <mesh position={[0, -0.34, 0.9]} rotation={[0, 0, Math.PI]}>
+          <torusGeometry args={[0.2, 0.022, 12, 48, Math.PI * 0.85]} />
           <meshBasicMaterial color={ACCENT} toneMapped={false} />
         </mesh>
-        {/* Side ear pods */}
-        {[-1, 1].map((s) => (
-          <group key={s} position={[s * 0.85, 0, 0]}>
-            <mesh>
-              <cylinderGeometry args={[0.22, 0.22, 0.18, 32]} />
-              <meshPhysicalMaterial color={WHITE} metalness={0.2} roughness={0.3} clearcoat={1} />
-            </mesh>
-            <mesh position={[s * 0.05, 0, 0]}>
-              <cylinderGeometry args={[0.13, 0.13, 0.22, 32]} />
-              <meshStandardMaterial color={ACCENT} emissive={ACCENT} emissiveIntensity={0.8} />
-            </mesh>
-          </group>
-        ))}
+        {/* Smile inner glow */}
+        <mesh position={[0, -0.34, 0.905]} rotation={[0, 0, Math.PI]}>
+          <torusGeometry args={[0.2, 0.012, 12, 48, Math.PI * 0.85]} />
+          <meshBasicMaterial color={ACCENT_SOFT} toneMapped={false} transparent opacity={0.7} />
+        </mesh>
+
+        {/* ── EYE GLOW point lights ── */}
+        <pointLight position={[-0.3, 0.0, 1.5]} intensity={0.6} color={ACCENT} distance={2} />
+        <pointLight position={[0.3, 0.0, 1.5]} intensity={0.6} color={ACCENT} distance={2} />
+
       </group>
 
-      {/* Neck */}
-      <mesh position={[0, 0.35, 0]}>
-        <cylinderGeometry args={[0.18, 0.22, 0.25, 24]} />
-        <meshStandardMaterial color={DARK} metalness={0.7} roughness={0.4} />
+      {/* ── NECK ── */}
+      <mesh position={[0, 0.02, 0]}>
+        <cylinderGeometry args={[0.2, 0.24, 0.2, 24]} />
+        <meshStandardMaterial color={"#b8c8d8"} metalness={0.5} roughness={0.4} />
       </mesh>
 
-      {/* Torso */}
-      <mesh position={[0, -0.15, 0]} castShadow>
-        <sphereGeometry args={[0.85, 48, 48]} />
+      {/* ── TORSO — round bubble body ── */}
+      <mesh position={[0, -0.52, 0]} castShadow>
+        <sphereGeometry args={[0.75, 48, 48]} />
         <meshPhysicalMaterial
           color={WHITE}
-          roughness={0.25}
-          metalness={0.2}
-          clearcoat={1}
-          clearcoatRoughness={0.15}
+          roughness={0.2}
+          metalness={0.15}
+          clearcoat={1.0}
+          clearcoatRoughness={0.12}
         />
       </mesh>
-      {/* Chest panel */}
-      <mesh position={[0, -0.05, 0.78]}>
-        <boxGeometry args={[0.45, 0.18, 0.05]} />
-        <meshStandardMaterial
-          color={ACCENT}
-          emissive={ACCENT}
-          emissiveIntensity={0.9}
-        />
+      {/* Chest panel glow strip */}
+      <mesh position={[0, -0.44, 0.7]}>
+        <boxGeometry args={[0.32, 0.1, 0.04]} />
+        <meshStandardMaterial color={ACCENT} emissive={ACCENT} emissiveIntensity={1.0} />
       </mesh>
-      <mesh position={[0, -0.3, 0.82]}>
-        <boxGeometry args={[0.55, 0.04, 0.04]} />
-        <meshStandardMaterial color={ACCENT} emissive={ACCENT} emissiveIntensity={0.8} />
+      <mesh position={[0, -0.6, 0.72]}>
+        <boxGeometry args={[0.42, 0.035, 0.03]} />
+        <meshStandardMaterial color={ACCENT} emissive={ACCENT} emissiveIntensity={0.7} />
       </mesh>
 
-      {/* Shoulders + arms */}
+      {/* ── SHOULDERS + ARMS ── */}
       {[
-        { ref: armL, x: -0.95, sign: -1 },
-        { ref: armR, x: 0.95, sign: 1 },
+        { ref: armL, x: -0.82, sign: -1 },
+        { ref: armR, x: 0.82, sign: 1 },
       ].map((arm, i) => (
-        <group key={i} ref={arm.ref} position={[arm.x, 0.05, 0]}>
+        <group key={i} ref={arm.ref} position={[arm.x, -0.3, 0]}>
+          {/* Shoulder ball */}
           <mesh>
-            <sphereGeometry args={[0.28, 32, 32]} />
-            <meshPhysicalMaterial color={WHITE} metalness={0.2} roughness={0.3} clearcoat={1} />
+            <sphereGeometry args={[0.24, 32, 32]} />
+            <meshPhysicalMaterial color={WHITE} metalness={0.15} roughness={0.25} clearcoat={1} />
           </mesh>
-          <mesh position={[arm.sign * 0.05, -0.4, 0]}>
-            <cylinderGeometry args={[0.16, 0.18, 0.55, 24]} />
-            <meshStandardMaterial color={DARK} metalness={0.7} roughness={0.4} />
+          {/* Upper arm */}
+          <mesh position={[arm.sign * 0.06, -0.36, 0]}>
+            <cylinderGeometry args={[0.14, 0.16, 0.48, 24]} />
+            <meshStandardMaterial color={"#b8c8d8"} metalness={0.55} roughness={0.4} />
           </mesh>
-          <mesh position={[arm.sign * 0.08, -0.78, 0]}>
-            <sphereGeometry args={[0.2, 32, 32]} />
-            <meshPhysicalMaterial color={WHITE} metalness={0.2} roughness={0.3} clearcoat={1} />
+          {/* Hand sphere */}
+          <mesh position={[arm.sign * 0.1, -0.68, 0]}>
+            <sphereGeometry args={[0.17, 32, 32]} />
+            <meshPhysicalMaterial color={WHITE} metalness={0.15} roughness={0.25} clearcoat={1} />
           </mesh>
         </group>
       ))}
 
-      {/* Hover base (no legs — floating robot) */}
-      <mesh position={[0, -1.1, 0]}>
-        <torusGeometry args={[0.55, 0.06, 16, 64]} />
-        <meshBasicMaterial color={ACCENT} toneMapped={false} transparent opacity={0.7} />
+      {/* ── HOVER BASE RING ── */}
+      <mesh position={[0, -1.35, 0]}>
+        <torusGeometry args={[0.5, 0.055, 16, 64]} />
+        <meshBasicMaterial color={ACCENT} toneMapped={false} transparent opacity={0.75} />
       </mesh>
-      <mesh position={[0, -1.1, 0]}>
-        <cylinderGeometry args={[0.5, 0.5, 0.02, 48]} />
-        <meshBasicMaterial color={ACCENT_SOFT} toneMapped={false} transparent opacity={0.18} />
+      <mesh position={[0, -1.35, 0]}>
+        <cylinderGeometry args={[0.45, 0.45, 0.02, 48]} />
+        <meshBasicMaterial color={ACCENT_SOFT} toneMapped={false} transparent opacity={0.15} />
       </mesh>
 
-      {/* Holographic landing rings (animated on pulse) */}
-      <mesh ref={ringOuter} position={[0, -1.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.6, 0.66, 64]} />
+      {/* ── HOLOGRAPHIC LANDING RINGS ── */}
+      <mesh ref={ringOuter} position={[0, -1.37, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.55, 0.61, 64]} />
         <meshBasicMaterial
           ref={ringMatOuter}
           color={ACCENT}
@@ -262,8 +319,8 @@ export function Robot({ scale = 1, pulseKey }: { scale?: number; pulseKey?: stri
           side={THREE.DoubleSide}
         />
       </mesh>
-      <mesh ref={ringInner} position={[0, -1.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.4, 0.48, 64]} />
+      <mesh ref={ringInner} position={[0, -1.37, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.35, 0.43, 64]} />
         <meshBasicMaterial
           ref={ringMatInner}
           color={ACCENT_SOFT}
@@ -274,9 +331,9 @@ export function Robot({ scale = 1, pulseKey }: { scale?: number; pulseKey?: stri
         />
       </mesh>
 
-      {/* Halo glow point lights */}
-      <pointLight position={[0, 0.5, 1.5]} intensity={1.2} color={ACCENT} distance={4} />
-      <pointLight position={[0, -1.1, 0]} intensity={0.8} color={ACCENT} distance={2.5} />
+      {/* Ambient glow lights */}
+      <pointLight position={[0, 0.4, 1.8]} intensity={1.0} color={ACCENT} distance={4} />
+      <pointLight position={[0, -1.35, 0]} intensity={0.7} color={ACCENT} distance={2.5} />
     </group>
   );
 }
@@ -290,8 +347,8 @@ function Particles({ count = 60 }: { count?: number }) {
   );
   useFrame((state) => {
     if (ref.current) {
-      ref.current.rotation.y = state.clock.elapsedTime * 0.05;
-      ref.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.2) * 0.2;
+      ref.current.rotation.y = state.clock.elapsedTime * 0.04;
+      ref.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.18) * 0.18;
     }
   });
   return (
@@ -306,10 +363,10 @@ function Particles({ count = 60 }: { count?: number }) {
         />
       </bufferGeometry>
       <pointsMaterial
-        size={0.04}
+        size={0.035}
         color={ACCENT}
         transparent
-        opacity={0.7}
+        opacity={0.65}
         sizeAttenuation
         toneMapped={false}
       />
@@ -341,21 +398,23 @@ export function RobotAvatar({ className = "", scale = 1, glow = true }: RobotAva
       <Canvas
         shadows
         dpr={[1, 1.75]}
-        camera={{ position: [0, 0.3, 4.2], fov: 35 }}
+        camera={{ position: [0, 0.2, 4.5], fov: 34 }}
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         style={{ background: "transparent" }}
       >
         <Suspense fallback={null}>
-          <ambientLight intensity={0.45} />
-          <directionalLight position={[3, 4, 5]} intensity={1.4} castShadow />
-          <directionalLight position={[-4, 2, -2]} intensity={0.6} color={ACCENT} />
-          <Float speed={1.2} rotationIntensity={0.15} floatIntensity={0.4}>
+          <ambientLight intensity={0.5} />
+          <directionalLight position={[3, 5, 5]} intensity={1.5} castShadow />
+          <directionalLight position={[-4, 2, -2]} intensity={0.5} color={ACCENT} />
+          {/* Top rim light to give the white shell that bright highlight */}
+          <directionalLight position={[0, 6, 2]} intensity={0.8} color={"#e0f0ff"} />
+          <Float speed={1.1} rotationIntensity={0.12} floatIntensity={0.35}>
             <Robot scale={scale} />
           </Float>
-          <Particles count={80} />
+          <Particles count={70} />
           <ContactShadows
-            position={[0, -1.55, 0]}
-            opacity={0.5}
+            position={[0, -1.75, 0]}
+            opacity={0.45}
             scale={6}
             blur={2.5}
             far={3}

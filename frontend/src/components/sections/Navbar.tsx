@@ -75,7 +75,7 @@ export function Navbar() {
               <Hexagon className="w-4 h-4 sm:w-5 sm:h-5 text-white" strokeWidth={2.4} />
             </span>
             <span className="font-extrabold tracking-tight text-white text-base sm:text-xl">
-              PORTFOL<span className="text-cyan-400">IO.</span>
+              Amb<span className="text-cyan-400">ar</span>
             </span>
           </a>
 
@@ -105,22 +105,8 @@ export function Navbar() {
             })}
           </nav>
 
-          {/* Right cluster */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <button
-              data-hover
-              aria-label="Toggle theme"
-              className="hidden sm:flex w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-white/10 bg-white/5 text-white/80 hover:text-cyan-400 hover:border-cyan-400/40 transition-colors items-center justify-center"
-            >
-              <Sun className="w-4 h-4" />
-            </button>
-            <button
-              data-hover
-              aria-label="Toggle layout"
-              className="hidden md:flex w-10 h-10 rounded-full border border-white/10 bg-white/5 text-white/80 hover:text-cyan-400 hover:border-cyan-400/40 transition-colors items-center justify-center"
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </button>
+          {/* Right actions */}
+          <div className="flex items-center gap-2">
 
             {/* Resume download */}
             <button
