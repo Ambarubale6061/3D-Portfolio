@@ -138,7 +138,7 @@ export function Skills() {
   / Skills & Expertise
 </p>
 
-<h2 className="text-3xl sm:text-4xl lg:text-4xl font-black text-white tracking-tight">
+<h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
   Building with{" "}
   <span className="text-cyan-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.7)]">
     Modern Technologies

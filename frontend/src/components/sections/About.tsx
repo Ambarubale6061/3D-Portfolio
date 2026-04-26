@@ -13,7 +13,7 @@ export function About() {
         >
           <div>
             <h2 className="text-sm font-mono text-primary uppercase tracking-widest mb-4">About</h2>
-           <h3 className="text-2xl sm:text-3xl font-semibold mb-6">
+           <h3 className="text-3xl sm:text-5xl font-semibold mb-6">
   <span className="text-white">Get to</span>{" "}
   <span className="text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]">
   Know Me

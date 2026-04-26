@@ -8,50 +8,52 @@ import {
   Search,
   ArrowRight,
   Zap,
+  Database,
+  Globe,
 } from "lucide-react";
 
 const services = [
   {
     icon: Code2,
-    title: "Full-Stack Development",
-    blurb: "End-to-end web platforms with CI/CD, observability, and scale baked in.",
-    deliverables: ["MERN / Next.js apps", "Type-safe APIs", "Cloud deployment"],
+    title: "Full Stack Development",
+    blurb: "Building scalable web applications from frontend to backend.",
+    deliverables: ["MERN Stack Apps", "REST APIs", "Deployment"],
     accent: "from-cyan-400 to-blue-600",
   },
   {
     icon: BrainCircuit,
     title: "AI Integration",
-    blurb: "LLM pipelines, RAG systems, and autonomous agents wired into real products.",
-    deliverables: ["RAG architecture", "Agent workflows", "Vector search"],
+    blurb: "Integrating AI features to enhance modern applications.",
+    deliverables: ["OpenAI APIs", "Chatbot Features", "Automation"],
     accent: "from-violet-400 to-fuchsia-600",
   },
   {
     icon: Layout,
-    title: "UI / UX Engineering",
-    blurb: "Premium interfaces with fluid micro-animations and obsessive detail.",
-    deliverables: ["Design systems", "Motion design", "WCAG accessibility"],
+    title: "Frontend Development",
+    blurb: "Creating responsive and visually engaging user interfaces.",
+    deliverables: ["React Apps", "Responsive UI", "Animations"],
     accent: "from-pink-400 to-rose-600",
   },
   {
     icon: Server,
-    title: "API Engineering",
-    blurb: "Robust REST & GraphQL APIs built for performance, security, and DX.",
-    deliverables: ["OpenAPI specs", "Rate-limit & auth", "p95 < 200ms"],
+    title: "Backend Development",
+    blurb: "Developing secure and scalable backend systems.",
+    deliverables: ["Node.js APIs", "Authentication", "Database Integration"],
     accent: "from-emerald-400 to-teal-600",
   },
   {
-    icon: Smartphone,
-    title: "Mobile Experiences",
-    blurb: "React Native and Expo apps that feel native on iOS and Android.",
-    deliverables: ["Expo + EAS builds", "Push & deep links", "Offline-first"],
-    accent: "from-amber-400 to-orange-600",
+    icon: Search,
+    title: "Optimization",
+    blurb: "Improving performance, speed, and code quality.",
+    deliverables: ["Performance Boost", "Code Refactoring", "Best Practices"],
+    accent: "from-sky-400 to-indigo-600",
   },
   {
-    icon: Search,
-    title: "Performance Audits",
-    blurb: "Lighthouse 100 scores, Core Web Vitals, and aggressive bundle slimming.",
-    deliverables: ["Bundle analysis", "Edge caching", "LCP / CLS / INP wins"],
-    accent: "from-sky-400 to-indigo-600",
+    icon: Database,
+    title: "Database Design",
+    blurb: "Designing efficient and scalable data systems.",
+    deliverables: ["Schema Design", "CRUD Systems", "Optimization"],
+    accent: "from-violet-400 to-fuchsia-600",
   },
 ];
 
@@ -67,10 +69,10 @@ export function Services() {
     <section id="services" className="py-20 sm:py-28 scroll-mt-24 relative">
       {/* Robot anchor (subtle, side) */}
       <div
-        className="hidden lg:block absolute top-12 right-0 w-[260px] h-[260px] pointer-events-none"
+        className="hidden lg:block absolute top-12 right-0 w-[280px] h-[280px] pointer-events-none"
         data-robot-anchor="services"
         data-robot-side="left"
-        data-robot-prompt="Need a product built? Here's what Ambar can ship for you."
+        data-robot-prompt="Need a web app? I build full stack applications with modern technologies."
       />
 
       {/* Header */}
@@ -82,15 +84,16 @@ export function Services() {
         className="text-center mb-14"
       >
         <p className="text-cyan-400 font-mono text-xs tracking-[0.3em] uppercase mb-3">
-          / What I Do
-        </p>
-        <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight">
-          Services that <span className="text-gradient-primary">ship</span>
-        </h2>
-        <p className="text-white/55 mt-5 max-w-2xl mx-auto text-sm sm:text-lg">
-          Six focused practices, all aimed at one outcome — a product your
-          users love and your team is proud of.
-        </p>
+  / Services
+</p>
+
+<h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+  What I <span className="text-cyan-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.7)]">Build</span>
+</h2>
+
+<p className="text-white/55 mt-5 max-w-2xl mx-auto text-sm sm:text-lg">
+  Solutions focused on performance, scalability, and real-world impact.
+</p>
       </motion.div>
 
       {/* Service cards */}
@@ -118,9 +121,7 @@ export function Services() {
               />
 
               {/* Floating index */}
-              <span className="absolute top-5 right-6 text-[11px] font-mono text-white/20 tracking-widest">
-                0{i + 1}
-              </span>
+             
 
               {/* Icon */}
               <motion.div
@@ -157,18 +158,7 @@ export function Services() {
               </ul>
 
               {/* Footer link */}
-              <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                <span
-                  className={`text-[10px] font-bold tracking-[0.22em] uppercase bg-gradient-to-r ${s.accent} bg-clip-text text-transparent`}
-                >
-                  Learn more
-                </span>
-                <span
-                  className={`w-9 h-9 rounded-full border border-white/10 flex items-center justify-center text-white/70 group-hover:bg-gradient-to-br group-hover:${s.accent} group-hover:text-white group-hover:border-transparent transition-all`}
-                >
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </span>
-              </div>
+              
             </motion.div>
           );
         })}
