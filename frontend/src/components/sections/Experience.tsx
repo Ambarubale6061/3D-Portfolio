@@ -1,304 +1,334 @@
-import { motion, useScroll, useTransform, useSpring } from "framer-motion";
-import { useRef } from "react";
-import { Briefcase, Sparkles, Rocket, GraduationCap, Code2, Zap } from "lucide-react";
+import { motion } from "framer-motion";
+import {
+  BadgeCheck,
+  ExternalLink,
+  GraduationCap,
+} from "lucide-react";
 
-const experiences = [
-  {
-    year: "2026",
-    role: "Senior Full-Stack Engineer",
-    company: "Independent / Freelance",
-    location: "Remote",
-    description:
-      "Architecting AI-augmented web platforms for early-stage startups. Shipping production systems from infrastructure to UI.",
-    achievements: [
-      "Built 3 production AI products end-to-end",
-      "Reduced average ship cycle to 3 weeks",
-    ],
-    tech: ["Next.js", "TypeScript", "OpenAI", "Postgres"],
-    icon: Sparkles,
-    accent: "from-cyan-400 to-blue-600",
-  },
-  {
-    year: "2025",
-    role: "AI Engineer",
-    company: "Stealth Startup",
-    location: "San Francisco · Remote",
-    description:
-      "Designed retrieval-augmented agent pipelines processing millions of documents weekly. Led the move from monolith to microservices.",
-    achievements: [
-      "Cut inference cost 62% via custom routing",
-      "Scaled vector search to 40M+ embeddings",
-    ],
-    tech: ["Python", "LangChain", "Pinecone", "Kubernetes"],
-    icon: Rocket,
-    accent: "from-violet-400 to-fuchsia-600",
-  },
-  {
-    year: "2024",
-    role: "Full-Stack Developer",
-    company: "JaruratCare Foundation",
-    location: "India · Hybrid",
-    description:
-      "Built end-to-end healthcare management system serving 12 clinics. Led complex business-logic migrations while preserving UI integrity for non-technical staff.",
-    achievements: [
-      "Onboarded 12 clinics in first quarter",
-      "Trained 40+ staff on the new platform",
-    ],
-    tech: ["React", "Node.js", "MongoDB", "Express"],
-    icon: Code2,
-    accent: "from-emerald-400 to-teal-600",
-  },
-  {
-    year: "2023",
-    role: "Java Developer Intern",
-    company: "Codec Technologies",
-    location: "Remote",
-    description:
-      "Architected backend services with Spring Boot. Improved API response time 40% via aggressive query optimization, indexed reads, and Redis caching.",
-    achievements: [
-      "Reduced p95 latency from 480ms → 290ms",
-      "Open-sourced 2 internal libraries",
-    ],
-    tech: ["Java", "Spring Boot", "Redis", "MySQL"],
-    icon: Briefcase,
-    accent: "from-amber-400 to-orange-600",
-  },
-  {
-    year: "2022",
-    role: "Frontend Engineer (Contract)",
-    company: "Various Agencies",
-    location: "Remote",
-    description:
-      "Delivered 14 marketing sites and 3 web apps for design agencies. Specialized in motion-driven landing pages and Webflow → React conversions.",
-    achievements: [
-      "Shipped 14 sites with 100 Lighthouse scores",
-      "Cut average build time by half via Vite",
-    ],
-    tech: ["React", "GSAP", "Tailwind", "Vite"],
-    icon: Zap,
-    accent: "from-pink-400 to-rose-600",
-  },
-  {
-    year: "2021",
-    role: "B.Tech in Computer Science",
-    company: "Started the Journey",
-    location: "India",
-    description:
-      "Began formal CS education with a focus on systems, algorithms, and distributed computing. Built first SaaS product as a freshman side project.",
-    achievements: [
-      "Top 5% of cohort",
-      "Hackathon winner × 3",
-    ],
-    tech: ["C++", "Python", "Linux", "Git"],
-    icon: GraduationCap,
-    accent: "from-sky-400 to-indigo-600",
-  },
-];
+// ==================== EXPERIENCE DATA ====================
+const experienceData = {
+  id: 1,
+  title: "Full Stack Developer Intern",
+  company: "JaruratCare Foundation",
+  location: "Remote",
+  dates: "Nov 2025 - Mar 2026",
+  certificateUrl: "/Certi.pdf",
+  descBullets: [
+    "Built a full-stack Nurse Management System using MERN stack (React, Node.js, Express, MongoDB) and Firebase, enabling efficient staff management, data handling, and real-time updates.",
+    "Developed and enhanced a WhatsApp bot system using Java and Spring Boot, implementing new features, optimizing workflows, and improving automated user interactions.",
+    "Designed and contributed to multiple solo and team-based projects, collaborating with developers to deliver scalable and production-ready solutions.",
+    "Developed and maintained the organization's main website, improving UI/UX, performance, and overall user engagement.",
+    "Gained hands-on experience in full-stack development, API integration, and real-world problem solving, delivering high-quality features in a collaborative environment."
+  ],
+  thumbnail: "/jaru.png",
+  techStack: [
+    { id: 1, name: "React", img: "/re.svg" },
+    { id: 2, name: "Node.js", img: "/node.png" },
+    { id: 3, name: "MongoDB", img: "/mongo.png" },
+    { id: 4, name: "Tailwind", img: "/tail.svg" },
+    { id: 5, name: "Firebase", img: "/fir.svg" },
+    { id: 6, name: "Java", img: "/java.svg" },
+    { id: 7, name: "Spring Boot", img: "/boot.png" },
+    { id: 8, name: "Express", img: "/ex.png" },
+    { id: 9, name: "JavaScript", img: "/js.svg" },
+    { id: 10, name: "TypeScript", img: "/ts.svg" },
+    { id: 11, name: "Git", img: "/git.svg" },
+    { id: 14, name: "Supabase", img: "/supa.svg" },
+    { id: 15, name: "Docker", img: "/dock.svg" },
+    { id: 16, name: "Next.js", img: "/next.svg" },
+  ],
+};
 
-function TimelineNode({
-  exp,
-  index,
-}: {
-  exp: (typeof experiences)[number];
-  index: number;
-}) {
-  const Icon = exp.icon;
-  const isLeft = index % 2 === 0;
+// ==================== EDUCATION DATA ====================
+const educationData = {
+  year: "2021",
+  degree: "B.Tech in Computer Science",
+  institution: "Started the Journey",
+  location: "India",
+  description:
+    "Formal CS education with a focus on systems, algorithms, and distributed computing. Built first SaaS product as a freshman side project.",
+  achievements: ["Top 5% of cohort", "Hackathon winner × 3"],
+  tech: ["C++", "Python", "Linux", "Git"],
+  icon: GraduationCap,
+  accent: "from-sky-400 to-indigo-600",
+  pdfUrl: "/education/degree_credential.pdf",
+};
+
+// ==================== PREMIUM EXPERIENCE CARD (COMPACT VERSION - NO BACKGROUND HOVER EFFECT) ====================
+function PremiumExperienceCard() {
+  const handleVerifyExperience = () => {
+    if (experienceData.certificateUrl) {
+      window.open(experienceData.certificateUrl, "_blank", "noopener,noreferrer");
+    }
+  };
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 60 }}
+      initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-      className="relative grid lg:grid-cols-[1fr_auto_1fr] gap-4 lg:gap-10 items-start"
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      whileHover={{ y: -4 }}
+      className="group relative w-full rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 overflow-hidden shadow-2xl shadow-black/30 ring-1 ring-white/10"
     >
-      {/* Left card (desktop) */}
-      <div className={`lg:col-start-1 ${isLeft ? "lg:block" : "lg:invisible lg:hidden"}`}>
-        {isLeft && <Card exp={exp} align="right" />}
-      </div>
+      {/* Animated border gradient on hover - this is a border/glow effect, not background color */}
+      
 
-      {/* Center node */}
-      <div className="absolute left-0 lg:static lg:col-start-2 flex flex-col items-center pt-2">
-        <motion.div
-          whileInView={{ scale: [0.6, 1.15, 1] }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 0.7, delay: 0.1 }}
-          className="relative"
-        >
-          {/* Pulse halo */}
-          <span
-            className={`absolute inset-0 rounded-full bg-gradient-to-br ${exp.accent} opacity-40 blur-md scale-150`}
-          />
-          <div
-            className={`relative w-12 h-12 rounded-full bg-gradient-to-br ${exp.accent} flex items-center justify-center shadow-[0_0_30px_rgba(56,189,248,0.45)] ring-4 ring-slate-950`}
-          >
-            <Icon className="w-5 h-5 text-white" strokeWidth={2.5} />
+      {/* Static blue/purple radial glows (no hover color changes) */}
+      <div className="absolute top-0 right-0 w-80 h-80 bg-purple-600/30 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-60 h-60 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Main Card Content - Reduced padding for compactness */}
+      <div className="relative p-5 sm:p-6 md:p-7 lg:p-8">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:flex-wrap justify-between items-start gap-4 mb-6">
+          {/* Left: Thumbnail + Title + Badge + Location/Date */}
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-3">
+              {/* Small circular logo (white bg, border) */}
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden bg-white flex-shrink-0 ring-2 ring-white/20 shadow-lg">
+                {experienceData.thumbnail ? (
+                  <img
+                    src={experienceData.thumbnail}
+                    alt={experienceData.company}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500 text-white font-bold text-xl">
+                    {experienceData.company.charAt(0)}
+                  </div>
+                )}
+              </div>
+
+              {/* Title Section */}
+              <div>
+                <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white tracking-tight leading-tight">
+                  {experienceData.title}
+                </h3>
+              </div>
+            </div>
+
+            {/* Company Badge + Location + Dates */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-purple-600/20 border border-purple-500/30 text-purple-300 text-xs font-semibold backdrop-blur-sm">
+                {experienceData.company}
+              </span>
+              <div className="flex items-center gap-2 text-white/50 text-xs">
+                <span>{experienceData.location}</span>
+                <span className="w-1 h-1 rounded-full bg-white/50" />
+                <span>{experienceData.dates}</span>
+              </div>
+            </div>
           </div>
-        </motion.div>
-        {/* Year badge */}
-        <div
-          className={`mt-3 px-3 py-1 rounded-full bg-slate-900 border border-white/10 text-[10px] font-mono tracking-[0.2em] font-bold bg-gradient-to-r ${exp.accent} bg-clip-text text-transparent`}
-        >
-          {exp.year}
+
+          {/* Right: Verify Experience Button with shimmer */}
+          <motion.button
+            onClick={handleVerifyExperience}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="relative overflow-hidden inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/80 backdrop-blur-md border border-white/20 text-xs font-semibold text-white/90 hover:text-white transition-all duration-300 group/btn shadow-md"
+          >
+            {/* Shimmer effect overlay */}
+            <div className="absolute inset-0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700 ease-in-out bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+            <BadgeCheck className="w-3.5 h-3.5 text-purple-400" />
+            <span className="hidden sm:inline">VERIFY EXPERIENCE</span>
+            <span className="sm:hidden">Verify</span>
+            <ExternalLink className="w-3 h-3 opacity-80 group-hover/btn:opacity-100 transition" />
+          </motion.button>
+        </div>
+
+        {/* Bullet Points Description - Text turns white with glow on hover */}
+        <div className="space-y-2 mb-6">
+          {experienceData.descBullets.map((point, idx) => (
+            <div
+              key={idx}
+              className="flex items-start gap-2.5 text-white/70 group-hover:text-white transition-all duration-300 group/bullet"
+            >
+              <motion.span
+                whileHover={{ rotate: 12, scale: 1.2 }}
+                transition={{ type: "spring", stiffness: 300 }}
+                className="text-purple-400 text-base mt-0.5 group-hover:text-purple-300 group-hover:drop-shadow-[0_0_6px_rgba(168,85,247,0.5)] transition-all duration-300"
+              >
+                ✦
+              </motion.span>
+              <span className="leading-relaxed text-sm group-hover:text-white group-hover:drop-shadow-[0_0_4px_rgba(255,255,255,0.3)] transition-all duration-300">
+                {point}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Subtle Divider */}
+        <div className="my-6 w-full h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+
+        {/* Tech Stack - Circular Icons with Tooltip (slightly smaller) */}
+        <div className="flex flex-wrap gap-3 items-center">
+          {experienceData.techStack.map((tech) => (
+            <div
+              key={tech.id}
+              className="relative group/tech cursor-pointer"
+            >
+              {/* Tooltip */}
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] font-medium px-2 py-1 rounded-md whitespace-nowrap opacity-0 group-hover/tech:opacity-100 transition-opacity duration-200 pointer-events-none z-20 shadow-lg border border-white/10">
+                {tech.name}
+              </div>
+              {/* Circular Icon */}
+              <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-slate-800/90 border border-white/15 flex items-center justify-center transition-all duration-300 group-hover/tech:scale-110 group-hover/tech:shadow-lg group-hover/tech:shadow-purple-500/40 group-hover/tech:border-purple-400/60">
+                {tech.img ? (
+                  <img
+                    src={tech.img}
+                    alt={tech.name}
+                    className="w-5 h-5 object-contain"
+                  />
+                ) : (
+                  <span className="text-[10px] font-bold text-white/80">
+                    {tech.name.slice(0, 2).toUpperCase()}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
-
-      {/* Mobile card (always) + Right card (desktop) */}
-      <div className={`pl-16 lg:pl-0 lg:col-start-3 ${isLeft ? "lg:invisible lg:hidden" : "lg:block"}`}>
-        {(!isLeft || true) && (
-          <div className="lg:hidden">
-            <Card exp={exp} align="left" />
-          </div>
-        )}
-        {!isLeft && (
-          <div className="hidden lg:block">
-            <Card exp={exp} align="left" />
-          </div>
-        )}
-      </div>
     </motion.div>
   );
 }
 
-function Card({
-  exp,
-  align,
-}: {
-  exp: (typeof experiences)[number];
-  align: "left" | "right";
-}) {
-  return (
-    <motion.div
-      whileHover={{ y: -4 }}
-      transition={{ duration: 0.3 }}
-      data-hover
-      className={`group relative rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/80 to-slate-950/90 backdrop-blur-xl p-6 sm:p-7 overflow-hidden ${
-        align === "right" ? "lg:text-right" : ""
-      }`}
-    >
-      {/* Accent edge */}
-      <div
-        className={`absolute inset-y-0 ${
-          align === "right" ? "right-0" : "left-0"
-        } w-1 bg-gradient-to-b ${exp.accent} opacity-70`}
-      />
-      {/* Hover glow */}
-      <div
-        className={`absolute -inset-px rounded-3xl bg-gradient-to-br ${exp.accent} opacity-0 group-hover:opacity-25 blur-xl transition-opacity duration-500 -z-10`}
-      />
-
-      <div className={`flex items-center gap-2 mb-3 ${align === "right" ? "lg:justify-end" : ""}`}>
-        <span
-          className={`text-[10px] font-mono tracking-[0.22em] font-bold uppercase bg-gradient-to-r ${exp.accent} bg-clip-text text-transparent`}
-        >
-          {exp.location}
-        </span>
-      </div>
-
-      <h4 className="text-xl sm:text-2xl font-bold text-white tracking-tight mb-1">
-        {exp.role}
-      </h4>
-      <p className={`text-sm text-cyan-300/80 font-mono mb-4`}>{exp.company}</p>
-
-      <p className="text-white/65 text-sm leading-relaxed mb-5">{exp.description}</p>
-
-      {/* Achievements */}
-      <ul className={`space-y-1.5 mb-5 ${align === "right" ? "lg:items-end" : ""}`}>
-        {exp.achievements.map((a) => (
-          <li
-            key={a}
-            className={`flex items-start gap-2 text-xs text-white/70 ${
-              align === "right" ? "lg:flex-row-reverse lg:text-right" : ""
-            }`}
-          >
-            <span
-              className={`mt-1.5 w-1 h-1 rounded-full bg-gradient-to-r ${exp.accent} shrink-0`}
-            />
-            <span>{a}</span>
-          </li>
-        ))}
-      </ul>
-
-      {/* Tech */}
-      <div className={`flex flex-wrap gap-1.5 ${align === "right" ? "lg:justify-end" : ""}`}>
-        {exp.tech.map((t) => (
-          <span
-            key={t}
-            className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] font-semibold text-white/60 tracking-wide"
-          >
-            {t}
-          </span>
-        ))}
-      </div>
-    </motion.div>
-  );
-}
-
-export function Experience() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start 70%", "end 30%"],
-  });
-  const lineHeight = useSpring(useTransform(scrollYProgress, [0, 1], ["0%", "100%"]), {
-    stiffness: 100,
-    damping: 30,
-  });
-
+// ==================== EDUCATION SECTION WITH LEFT-RIGHT ANIMATION ====================
+function Education() {
   return (
     <section
-      ref={sectionRef}
-      id="experience"
-      className="py-24 sm:py-32 scroll-mt-24 relative"
+      id="education"
+      className="py-16 sm:py-20 scroll-mt-24 relative"
     >
-      <div
-        className="hidden lg:block absolute top-0 right-0 w-[260px] h-[260px] pointer-events-none"
-        data-robot-anchor="experience"
-        data-robot-side="left"
-        data-robot-prompt="A few years across startups, agencies, and AI research labs."
-      />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <motion.div
+  initial={{ opacity: 0, y: 20 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  viewport={{ once: true, margin: "-80px" }}
+  transition={{ duration: 0.7 }}
+  className="text-center mb-14"
+>
+  <p className="text-cyan-400 font-mono text-xs tracking-[0.35em] uppercase mb-3">
+    / Learning & Growth
+  </p>
 
-      {/* Header */}
-      <motion.div
+  <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+          Education{" "}
+          <span className="text-gradient-primary drop-shadow-[0_0_12px_rgba(34,211,238,0.7)]">
+            Journey
+          </span>
+        </h2>
+
+  <p className="text-white/50 mt-5 max-w-xl mx-auto text-sm sm:text-lg">
+    Building a strong foundation through academics, curiosity, and continuous learning.
+  </p>
+</motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, x: -60 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
+          className="max-w-3xl mx-auto"
+        >
+          <div className="relative rounded-2xl bg-slate-900/40 backdrop-blur-sm border border-white/10 p-5 sm:p-6 shadow-xl hover:shadow-2xl transition-shadow duration-300">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-indigo-600 flex items-center justify-center shadow-lg flex-shrink-0">
+                <GraduationCap className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl sm:text-2xl font-bold text-white">{educationData.degree}</h3>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 mb-2">
+                  <span className="text-cyan-300 text-xs font-medium">{educationData.institution}</span>
+                  <span className="text-white/40 text-[10px]">•</span>
+                  <span className="text-white/40 text-xs">{educationData.location}</span>
+                  <span className="text-white/40 text-[10px]">•</span>
+                  <span className="text-white/40 text-xs">{educationData.year}</span>
+                </div>
+                <p className="text-white/70 text-sm leading-relaxed mb-3">{educationData.description}</p>
+                <div className="flex flex-wrap gap-2">
+                  {educationData.achievements.map((ach, idx) => (
+                    <span key={idx} className="text-[11px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/60">
+                      {ach}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {educationData.tech.map((skill) => (
+                    <span key={skill} className="text-[10px] font-mono text-white/40 bg-white/5 px-2 py-0.5 rounded">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// ==================== MAIN EXPERIENCE SECTION ====================
+export function Experience() {
+  return (
+    <>
+      <section
+        id="experience"
+        className="py-16 sm:py-20 scroll-mt-24 relative"
+      >
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Section Header */}
+          <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-100px" }}
         transition={{ duration: 0.7 }}
-        className="text-center mb-20"
+        className="text-center mb-16"
       >
         <p className="text-cyan-400 font-mono text-xs tracking-[0.3em] uppercase mb-3">
           / Career Journey
         </p>
-        <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight">
-          Experience <span className="text-gradient-primary">Timeline</span>
+
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+          My{" "}
+          <span className="text-gradient-primary drop-shadow-[0_0_12px_rgba(34,211,238,0.7)]">
+            Experience
+          </span>
         </h2>
         <p className="text-white/55 mt-5 max-w-2xl mx-auto text-base sm:text-lg">
-          From first lines of code to shipping AI products. Scroll to follow the trail.
-        </p>
+  From writing my first lines of code to delivering real-world products — each step shaped my skills, mindset, and problem-solving approach.
+</p>
       </motion.div>
 
-      {/* Timeline rail */}
-      <div className="relative max-w-6xl mx-auto">
-        {/* Static rail (mobile: left, desktop: center) */}
-        <div className="absolute top-0 bottom-0 left-5 lg:left-1/2 lg:-translate-x-1/2 w-px bg-white/10 pointer-events-none" />
-        {/* Animated progress fill */}
-        <motion.div
-          style={{ height: lineHeight }}
-          className="absolute top-0 left-5 lg:left-1/2 lg:-translate-x-1/2 w-px origin-top bg-gradient-to-b from-cyan-400 via-sky-500 to-blue-600 shadow-[0_0_20px_rgba(56,189,248,0.7)] pointer-events-none"
-        />
-        {/* Glowing scroll head */}
-        <motion.div
-          style={{ top: lineHeight }}
-          className="absolute left-5 lg:left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-cyan-300 shadow-[0_0_20px_8px_rgba(56,189,248,0.5)] pointer-events-none"
-        />
-
-        <div className="space-y-16 lg:space-y-24">
-          {experiences.map((exp, i) => (
-            <TimelineNode key={exp.year + exp.role} exp={exp} index={i} />
-          ))}
+          {/* Single Large Premium Card */}
+          <PremiumExperienceCard />
         </div>
-      </div>
-    </section>
+      </section>
+
+      {/* Education Section with left-right animation */}
+      <Education />
+    </>
   );
+}
+
+// Add custom animation for shimmer effect
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+  .animate-\\[shimmer_3s_ease_infinite\\] {
+    animation: shimmer 3s ease infinite;
+  }
+`;
+if (!document.head.querySelector('#shimmer-style')) {
+  style.id = 'shimmer-style';
+  document.head.appendChild(style);
 }

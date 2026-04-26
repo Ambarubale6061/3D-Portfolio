@@ -1,20 +1,21 @@
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { useRef, useState, useEffect } from "react";
-import { ArrowUpRight, Github, X, ExternalLink, Globe, Code2 } from "lucide-react";
-import project1Img from "../../assets/project-1.png";
-import project2Img from "../../assets/project-2.png";
-import project3Img from "../../assets/project-3.png";
+import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
+import { useRef, useState } from "react";
+import { ArrowUpRight, Github, Globe } from "lucide-react";
+
+// Note: Images are served from the public folder, so no imports needed.
+const project1Img = "/assets/project-1.png";
+const project2Img = "/assets/project-2.png";
+const project3Img = "/assets/project-3.png";
 
 type Project = {
   title: string;
   tagline: string;
   description: string;
-  tech: string[];
+  tech: { name: string; logo: string }[];
   image: string;
   link: string;
   github: string;
   accent: string;
-  stats: { label: string; value: string }[];
 };
 
 const projects: Project[] = [
@@ -23,52 +24,107 @@ const projects: Project[] = [
     tagline: "Real-time collaboration",
     description:
       "A real-time collaboration platform with WebRTC video calls, shared cursors, and live document editing for distributed engineering teams. Scaled to 50K monthly active users on a serverless backend.",
-    tech: ["Next.js", "WebRTC", "Socket.io", "MongoDB", "Redis"],
+    tech: [
+      { name: "Next.js", logo: "/next.svg" },
+      { name: "WebRTC", logo: "/webrtc.png" },
+      { name: "Socket.io", logo: "/socket.png" },
+      { name: "MongoDB", logo: "/MongoDB.png" },
+      { name: "express", logo: "/ex.png" },
+    ],
     image: project1Img,
     link: "#",
     github: "#",
     accent: "from-cyan-400 to-blue-600",
-    stats: [
-      { label: "MAU", value: "50K+" },
-      { label: "Latency", value: "<80ms" },
-      { label: "Uptime", value: "99.9%" },
-    ],
   },
   {
     title: "AgenticAI Studio",
     tagline: "Autonomous agent orchestration",
     description:
       "Drag-and-drop visual builder for autonomous LLM agent workflows with real-time execution monitoring, branching logic, and multi-model routing across OpenAI, Anthropic, and open-source providers.",
-    tech: ["React", "Python", "LangChain", "Supabase", "Postgres"],
+    tech: [
+      { name: "React", logo: "/React.png" },
+      { name: "Firebase", logo: "/Firebase.png" },
+      { name: "Framer", logo: "/framer.svg" },
+      { name: "Supabase", logo: "/icons8-supabase-48.png" },
+      { name: "PostgreSQL", logo: "/PostgreSQL.png" },
+    ],
     image: project2Img,
     link: "#",
     github: "#",
     accent: "from-violet-400 to-fuchsia-600",
-    stats: [
-      { label: "Agents", value: "12K" },
-      { label: "Models", value: "8" },
-      { label: "Runs/day", value: "1.2M" },
-    ],
   },
   {
     title: "FutureCart",
     tagline: "AI-powered commerce",
     description:
       "Next-generation e-commerce platform with personalized AI recommendations, predictive inventory analytics, and a Stripe-powered checkout that converts 38% above industry baseline.",
-    tech: ["Next.js", "Node.js", "PostgreSQL", "Stripe", "OpenAI"],
+    tech: [
+      { name: "Node.js", logo: "/Node.js.png" },
+      { name: "Tailwind", logo: "/Tailwind CSS.png" },
+      { name: "Three.js", logo: "/Three.js.png" },
+      { name: "Git", logo: "/git.svg" },
+      { name: "TypeScript", logo: "/ts.svg" },
+    ],
     image: project3Img,
     link: "#",
     github: "#",
     accent: "from-emerald-400 to-teal-600",
-    stats: [
-      { label: "Conv. lift", value: "+38%" },
-      { label: "GMV", value: "$2.4M" },
-      { label: "Stores", value: "120" },
-    ],
   },
 ];
 
-function TiltCard({ project, onOpen }: { project: Project; onOpen: () => void }) {
+// Tech stack circle item with tooltip and hover effects
+function TechIcon({ name, logo }: { name: string; logo: string }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      className="relative flex items-center justify-center"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div className="relative">
+        {/* Soft blurred background glow (appears on hover) */}
+        <div
+          className={`absolute inset-0 rounded-full bg-purple-500/30 blur-md transition-opacity duration-300 ${
+            hovered ? "opacity-100" : "opacity-0"
+          }`}
+        />
+        {/* Perfect circle with border & dark background */}
+        <div
+          className={`w-10 h-10 rounded-full bg-slate-800/90 border transition-all duration-300 flex items-center justify-center ${
+            hovered
+              ? "border-purple-400/80 shadow-[0_0_12px_rgba(168,85,247,0.6)]"
+              : "border-white/15"
+          }`}
+        >
+          <motion.img
+            src={logo}
+            alt={name}
+            className="w-5 h-5 object-contain"
+            animate={hovered ? { scale: 1.1 } : { scale: 1 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+          />
+        </div>
+      </div>
+      {/* Tooltip above circle with scale animation */}
+      <AnimatePresence>
+        {hovered && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-md bg-slate-900/90 backdrop-blur-sm border border-white/10 text-white text-xs font-medium whitespace-nowrap z-20 shadow-lg"
+          >
+            {name}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function TiltCard({ project }: { project: Project }) {
   const ref = useRef<HTMLDivElement>(null);
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
@@ -96,24 +152,18 @@ function TiltCard({ project, onOpen }: { project: Project; onOpen: () => void })
       onMouseMove={onMove}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={onLeave}
-      onClick={onOpen}
-      data-hover
       style={{ rotateX: rx, rotateY: ry, transformPerspective: 1200, transformStyle: "preserve-3d" }}
-      className="group relative cursor-pointer rounded-3xl"
+      className="group relative rounded-3xl"
     >
-      {/* Outer glow */}
       <div
         className={`absolute -inset-px rounded-3xl bg-gradient-to-br ${project.accent} opacity-0 group-hover:opacity-60 blur-xl transition-opacity duration-500 -z-10`}
       />
 
-      {/* Card body */}
       <div
         className="relative rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/80 to-slate-950/90 backdrop-blur-xl overflow-hidden shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6)]"
         style={{ transformStyle: "preserve-3d" }}
       >
-        {/* Browser chrome preview */}
         <div className="relative aspect-[16/10] overflow-hidden bg-slate-950">
-          {/* Fake window chrome */}
           <div className="absolute top-0 inset-x-0 z-20 flex items-center gap-2 px-4 py-2.5 bg-slate-950/80 backdrop-blur border-b border-white/5">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
             <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
@@ -126,7 +176,6 @@ function TiltCard({ project, onOpen }: { project: Project; onOpen: () => void })
             </div>
           </div>
 
-          {/* Image with hover-scroll effect */}
           <div className="absolute inset-0 pt-9">
             <motion.img
               src={project.image}
@@ -138,7 +187,6 @@ function TiltCard({ project, onOpen }: { project: Project; onOpen: () => void })
             />
           </div>
 
-          {/* Glare overlay */}
           <motion.div
             className="absolute inset-0 pointer-events-none mix-blend-overlay opacity-0 group-hover:opacity-60 transition-opacity duration-300"
             style={{
@@ -146,13 +194,11 @@ function TiltCard({ project, onOpen }: { project: Project; onOpen: () => void })
             }}
           />
 
-          {/* Bottom gradient + accent line */}
           <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent pointer-events-none" />
           <div className={`absolute inset-x-0 bottom-0 h-px bg-gradient-to-r ${project.accent}`} />
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-4" style={{ transform: "translateZ(40px)", transformStyle: "preserve-3d" }}>
+        <div className="p-6 space-y-5" style={{ transform: "translateZ(40px)", transformStyle: "preserve-3d" }}>
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className={`text-xs font-mono tracking-widest uppercase mb-1 bg-gradient-to-r ${project.accent} bg-clip-text text-transparent`}>
@@ -162,25 +208,40 @@ function TiltCard({ project, onOpen }: { project: Project; onOpen: () => void })
                 {project.title}
               </h4>
             </div>
-            <span className="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/70 group-hover:bg-cyan-400 group-hover:text-slate-950 group-hover:border-cyan-400 transition-all shrink-0">
-              <ArrowUpRight className="w-4 h-4" />
-            </span>
           </div>
 
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {project.tech.slice(0, 4).map((t) => (
-              <span
-                key={t}
-                className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-semibold text-white/70 tracking-wide"
-              >
-                {t}
-              </span>
+          <p className="text-white/70 leading-relaxed text-sm">
+            {project.description}
+          </p>
+
+          {/* Tech stack section – perfect circles with tooltips & hover effects */}
+          <div className="flex flex-wrap gap-3 mt-4">
+            {project.tech.map((t) => (
+              <TechIcon key={t.name} name={t.name} logo={t.logo} />
             ))}
-            {project.tech.length > 4 && (
-              <span className="px-2.5 py-1 rounded-md text-[10px] font-semibold text-cyan-300/80">
-                +{project.tech.length - 4}
-              </span>
-            )}
+          </div>
+
+          <div className="relative h-16 overflow-hidden">
+            <motion.div 
+              className="flex items-center gap-3 absolute inset-x-0 bottom-0"
+              initial={{ y: 80 }}
+              animate={hovering ? { y: 0 } : { y: 80 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            >
+              <a
+                href={project.link}
+                className="flex-1 px-5 py-3 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-xs tracking-[0.22em] uppercase flex items-center justify-center gap-2 shadow-lg hover:shadow-cyan-500/40 transition-all duration-300 hover:scale-[1.02]"
+              >
+                View Live <ArrowUpRight className="w-3.5 h-3.5" />
+              </a>
+              <a
+                href={project.github}
+                aria-label="View on GitHub"
+                className="w-12 h-12 rounded-full border border-white/20 bg-white/5 text-white hover:text-cyan-300 hover:border-cyan-400/60 transition-all duration-300 flex items-center justify-center hover:scale-110 hover:shadow-md hover:shadow-cyan-500/20"
+              >
+                <Github className="w-4 h-4" />
+              </a>
+            </motion.div>
           </div>
         </div>
       </div>
@@ -188,161 +249,14 @@ function TiltCard({ project, onOpen }: { project: Project; onOpen: () => void })
   );
 }
 
-function ProjectModal({ project, onClose }: { project: Project; onClose: () => void }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [onClose]);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.25 }}
-      className="fixed inset-0 z-[9990] flex items-center justify-center p-4 sm:p-8 bg-slate-950/85 backdrop-blur-xl"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.92, y: 30, opacity: 0 }}
-        animate={{ scale: 1, y: 0, opacity: 1 }}
-        exit={{ scale: 0.92, y: 30, opacity: 0 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-6xl max-h-[90vh] overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900 to-slate-950 shadow-2xl"
-      >
-        <div className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r ${project.accent}`} />
-
-        <button
-          data-hover
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-slate-900/80 border border-white/10 text-white/80 hover:bg-cyan-400 hover:text-slate-950 transition-colors flex items-center justify-center"
-        >
-          <X className="w-4 h-4" />
-        </button>
-
-        <div className="grid lg:grid-cols-[1.4fr_1fr] max-h-[90vh]">
-          {/* Live preview pane */}
-          <div className="relative bg-slate-950 overflow-hidden border-b lg:border-b-0 lg:border-r border-white/5">
-            <div className="flex items-center gap-2 px-4 py-3 bg-slate-950 border-b border-white/5">
-              <span className="w-3 h-3 rounded-full bg-red-500/80" />
-              <span className="w-3 h-3 rounded-full bg-yellow-500/80" />
-              <span className="w-3 h-3 rounded-full bg-green-500/80" />
-              <div className="ml-3 flex-1 h-7 rounded-md bg-white/5 border border-white/10 flex items-center px-3">
-                <Globe className="w-3.5 h-3.5 text-cyan-400/80 mr-2" />
-                <span className="text-xs text-white/60 font-mono truncate">
-                  https://{project.title.toLowerCase()}.app
-                </span>
-              </div>
-              <a
-                href={project.link}
-                data-hover
-                className="ml-2 px-3 py-1.5 rounded-md text-[11px] font-bold tracking-wider uppercase text-cyan-300 border border-cyan-400/30 hover:bg-cyan-400 hover:text-slate-950 transition-colors flex items-center gap-1.5"
-              >
-                Open <ExternalLink className="w-3 h-3" />
-              </a>
-            </div>
-            <div className="relative h-[420px] lg:h-[560px] overflow-hidden">
-              <motion.img
-                src={project.image}
-                alt={project.title}
-                className="w-full h-auto"
-                animate={{ y: ["0%", "-55%", "0%"] }}
-                transition={{ duration: 18, ease: "easeInOut", repeat: Infinity }}
-                style={{ minHeight: "100%" }}
-              />
-              <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/5" />
-            </div>
-          </div>
-
-          {/* Info pane */}
-          <div className="p-6 sm:p-8 overflow-y-auto space-y-6">
-            <div>
-              <p className={`text-xs font-mono tracking-[0.22em] uppercase mb-2 bg-gradient-to-r ${project.accent} bg-clip-text text-transparent`}>
-                {project.tagline}
-              </p>
-              <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                {project.title}
-              </h3>
-            </div>
-
-            <p className="text-white/70 leading-relaxed text-sm sm:text-base">
-              {project.description}
-            </p>
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-3">
-              {project.stats.map((s) => (
-                <div
-                  key={s.label}
-                  className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-center"
-                >
-                  <p className={`text-xl font-black bg-gradient-to-br ${project.accent} bg-clip-text text-transparent`}>
-                    {s.value}
-                  </p>
-                  <p className="text-[10px] tracking-widest uppercase text-white/45 mt-0.5">
-                    {s.label}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            <div>
-              <h5 className="text-xs font-bold tracking-[0.22em] text-white/60 uppercase mb-3 flex items-center gap-2">
-                <Code2 className="w-3.5 h-3.5" /> Tech Stack
-              </h5>
-              <div className="flex flex-wrap gap-2">
-                {project.tech.map((t) => (
-                  <span
-                    key={t}
-                    className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs font-semibold text-white/80"
-                  >
-                    {t}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 pt-2">
-              <a
-                data-hover
-                href={project.link}
-                className="flex-1 px-5 py-3 rounded-full bg-gradient-cta text-white font-bold text-xs tracking-[0.22em] uppercase flex items-center justify-center gap-2 hover:shadow-[0_10px_40px_-10px_rgba(56,189,248,0.7)] transition-shadow"
-              >
-                View Live <ArrowUpRight className="w-3.5 h-3.5" />
-              </a>
-              <a
-                data-hover
-                href={project.github}
-                aria-label="View on GitHub"
-                className="w-12 h-12 rounded-full border border-white/10 bg-white/5 text-white hover:text-cyan-300 hover:border-cyan-400/40 transition-colors flex items-center justify-center"
-              >
-                <Github className="w-4 h-4" />
-              </a>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
-
 export function Projects() {
-  const [active, setActive] = useState<Project | null>(null);
-
   return (
     <section id="projects" className="py-24 sm:py-32 scroll-mt-24 relative">
       <div
         className="hidden lg:block absolute top-0 right-0 w-[260px] h-[260px] pointer-events-none"
         data-robot-anchor="projects"
         data-robot-side="left"
-        data-robot-prompt="A few favorites — real apps shipped to real users."
+        data-robot-prompt="Built. Shipped. Used."
       />
 
       <motion.div
@@ -353,13 +267,17 @@ export function Projects() {
         className="text-center mb-16"
       >
         <p className="text-cyan-400 font-mono text-xs tracking-[0.3em] uppercase mb-3">
-          / Selected Work
+          / My Work
         </p>
-        <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight">
-          Featured <span className="text-gradient-primary">Projects</span>
+
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+          Featured{" "}
+          <span className="text-gradient-primary drop-shadow-[0_0_12px_rgba(34,211,238,0.7)]">
+            Projects
+          </span>
         </h2>
         <p className="text-white/55 mt-5 max-w-2xl mx-auto text-base sm:text-lg">
-          Hover to peek inside. Click any card to open the full live preview.
+          Building reliable, scalable, and user-focused digital products.
         </p>
       </motion.div>
 
@@ -372,14 +290,10 @@ export function Projects() {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.6, delay: i * 0.1 }}
           >
-            <TiltCard project={p} onOpen={() => setActive(p)} />
+            <TiltCard project={p} />
           </motion.div>
         ))}
       </div>
-
-      <AnimatePresence>
-        {active && <ProjectModal project={active} onClose={() => setActive(null)} />}
-      </AnimatePresence>
     </section>
   );
 }
