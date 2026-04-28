@@ -1,8 +1,8 @@
+import "dotenv/config";   // ← ADD THIS as the very first line
+
 import app from "./app.js";
 import { logger } from "./lib/logger.js";
 
-// Default to 3001 so the backend always starts locally without any .env setup.
-// The frontend Vite proxy points to http://localhost:3001 by default.
 const port = Number(process.env.PORT ?? 3001);
 
 if (Number.isNaN(port) || port <= 0) {

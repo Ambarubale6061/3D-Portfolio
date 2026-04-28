@@ -1,20 +1,16 @@
 import { Router, type IRouter } from "express";
-import OpenAI from "openai";
+import Groq from "groq-sdk";
 
 const router: IRouter = Router();
 
-const client = new OpenAI({
-  apiKey: process.env["OPENAI_API_KEY"],
-  // Remove baseURL if you're using the standard OpenAI API
-  ...(process.env["OPENAI_BASE_URL"]
-    ? { baseURL: process.env["OPENAI_BASE_URL"] }
-    : {}),
+const client = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
 });
 
-const SYSTEM_PROMPT = `You are AMBI, the friendly AI sidekick for Ambar's portfolio site. Ambar is a Full-Stack Developer & AI Engineer who builds polished web apps and intelligent systems.
+const SYSTEM_PROMPT = `You are AMBAR, the friendly AI sidekick for Ambar's portfolio site. Ambar is a Full-Stack Developer & AI Engineer who builds polished web apps and intelligent systems.
 
 Style:
-- Speak in first person as AMBI ("I"), referring to Ambar in third person ("Ambar", "he").
+- Speak in first person as AMBAR ("I"), referring to Ambar in third person ("Ambar", "he").
 - Warm, witty, concise. 1-3 short sentences. Plain text, no markdown.
 - If asked something off-topic, gently steer back to Ambar's work, projects, or how to get in touch.
 
@@ -42,8 +38,8 @@ router.post("/chat", async (req, res) => {
     res.flushHeaders?.();
 
     const stream = await client.chat.completions.create({
-      model: "gpt-4o",               // ← change to any model you have access to
-      max_completion_tokens: 400,
+      model: "llama-3.3-70b-versatile",   // fast & free on Groq
+      max_tokens: 400,
       stream: true,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
