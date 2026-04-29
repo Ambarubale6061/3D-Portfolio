@@ -2,26 +2,47 @@ import { build } from "esbuild";
 
 await build({
   entryPoints: ["src/index.ts"],
+  outfile: "dist/index.mjs",
+
   bundle: true,
 
-  // ✅ Node environment sathi proper config
+  // ✅ Node environment config
   platform: "node",
   target: "node18",
   format: "esm",
 
-  outfile: "dist/index.mjs",
   sourcemap: true,
 
-  // ✅ IMPORTANT: Node built-ins + problematic libs external thev
+  // ✅ IMPORTANT: Server dependencies bundle karu naka
   external: [
-    "pino",
-    "pino-pretty",
-    "pino-http",
+    // Core backend libs
+    "express",
+    "cors",
     "dotenv",
+
+    // Logging
+    "pino",
+    "pino-http",
+    "pino-pretty",
+
+    // Mail / AI SDKs
+    "nodemailer",
+    "openai",
+    "groq-sdk",
+
+    // Node built-ins (VERY IMPORTANT)
     "fs",
     "path",
-    "os"
+    "os",
+    "events",
+    "http",
+    "https",
+    "stream",
+    "url",
+    "zlib"
   ],
+
+  logLevel: "info",
 });
 
-console.log("Backend build complete → dist/index.mjs");
+console.log("✅ Backend build complete → dist/index.mjs");
