@@ -12,7 +12,7 @@ const MY_NAME     = "Ambar Ubale";
 const MY_LOCATION = "Remote / Global";
 // ─────────────────────────────────────────────────────────────────────────────
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+const API_URL = import.meta.env.VITE_API_URL;
 
 const PREFILLED_MSG = encodeURIComponent(
   `Hi ${MY_NAME}, I came across your portfolio and would love to connect!`
