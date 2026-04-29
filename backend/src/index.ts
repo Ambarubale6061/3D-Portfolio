@@ -1,18 +1,18 @@
-import "dotenv/config";   // ← ADD THIS as the very first line
+// ✅ dotenv proper way (NO "dotenv/config")
+import dotenv from "dotenv";
+dotenv.config();
 
 import app from "./app.js";
 import { logger } from "./lib/logger.js";
 
-const port = Number(process.env.PORT ?? 3001);
+// ✅ Render sathi PORT (default fallback)
+const port = Number(process.env.PORT || 10000);
 
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${process.env.PORT}"`);
 }
 
-app.listen(port, (err?: Error) => {
-  if (err) {
-    logger.error({ err }, "Error starting server");
-    process.exit(1);
-  }
-  logger.info({ port }, `🚀 Backend server listening on http://localhost:${port}`);
+// ✅ Server start
+app.listen(port, () => {
+  logger.info(`🚀 Backend server running on port ${port}`);
 });
