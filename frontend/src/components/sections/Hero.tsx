@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { ArrowRight, ChevronDown, Download } from "lucide-react";
-import { downloadResume } from "@/lib/resume";
 import { TypeAnimation } from "react-type-animation";
 
 export function Hero() {
@@ -17,39 +16,39 @@ export function Hero() {
         {/* LEFT — copy (compact) */}
         <div className="space-y-5 min-w-0 max-w-[480px]">
           <motion.p
-  initial={{ opacity: 0, y: 16 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.7, delay: 0.1 }}
-  className="font-semibold tracking-[0.3em] text-xs uppercase"
->
-  <span className="text-white">
-    Hi, I'm{" "}
-  </span>
-  <span className="text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]">
-    Ambar
-  </span>
-</motion.p>
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.1 }}
+            className="font-semibold tracking-[0.3em] text-xs uppercase"
+          >
+            <span className="text-white">
+              Hi, I'm{" "}
+            </span>
+            <span className="text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]">
+              Ambar
+            </span>
+          </motion.p>
 
-{/* Typing Heading */}
-<motion.h1
-  initial={{ opacity: 0, y: 24 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.8, delay: 0.2 }}
-  className="font-black text-white leading-[1.1] tracking-tight text-[clamp(1.8rem,4.5vw,3.2rem)]"
->
-  <TypeAnimation
-    sequence={[
-      "FULL STACK DEVELOPER", 2000,
-      "AI BUILDER", 2000,
-      "PROBLEM SOLVER", 2500,
-    ]}
-    wrapper="span"
-    speed={30}
-    repeat={Infinity}
-    cursor={false}   // remove extra cursor
-  />
-  <span className="text-cyan-400 animate-pulse">|</span>
-</motion.h1>
+          {/* Typing Heading */}
+          <motion.h1
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="font-black text-white leading-[1.1] tracking-tight text-[clamp(1.8rem,4.5vw,3.2rem)]"
+          >
+            <TypeAnimation
+              sequence={[
+                "FULL STACK DEVELOPER", 2000,
+                "AI BUILDER", 2000,
+                "PROBLEM SOLVER", 2500,
+              ]}
+              wrapper="span"
+              speed={30}
+              repeat={Infinity}
+              cursor={false}   // remove extra cursor
+            />
+            <span className="text-cyan-400 animate-pulse">|</span>
+          </motion.h1>
 
           <motion.h2
             initial={{ opacity: 0, y: 16 }}
@@ -86,17 +85,21 @@ export function Hero() {
                 <ArrowRight className="w-3 h-3" />
               </span>
             </a>
-            <button
+
+            {/* ✅ UPDATED RESUME BUTTON */}
+            <a
               data-hover
-              onClick={() => downloadResume()}
-              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-full border border-white/15 text-white/85 font-bold text-[11px] tracking-[0.22em] uppercase hover:border-cyan-400/50 hover:text-cyan-300 transition-colors"
+              href="/Certi.pdf" //ADD YOUR RESUME PATH HERE
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-full border border-white/15 text-white/85 font-bold text-[11px] tracking-[0.22em] uppercase hover:border-cyan-400/50 hover:text-cyan-300 transition-colors cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" /> Resume
-            </button>
+            </a>
           </motion.div>
         </div>
 
-        {/* RIGHT — robot anchor (larger, padded so the full robot fits) */}
+        {/* RIGHT — robot anchor */}
         <motion.div
           initial={{ opacity: 0, scale: 0.92 }}
           animate={{ opacity: 1, scale: 1 }}

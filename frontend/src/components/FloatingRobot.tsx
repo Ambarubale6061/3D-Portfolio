@@ -4,8 +4,8 @@ import { Float, ContactShadows, Environment } from "@react-three/drei";
 import { motion, AnimatePresence } from "framer-motion";
 import { Robot } from "./RobotAvatar";
 import { hasWebGL } from "@/lib/webgl";
-import { playWhoosh, setRobotMuted, isRobotMuted } from "@/lib/robotSound";
-import { Volume2, VolumeX } from "lucide-react";
+
+// ❌ AUDIO IMPORTS ANI LUCIDE ICONS KADHUN TAKLE AAHE
 
 const WEBGL_OK = hasWebGL();
 const SIZE = 480;
@@ -15,7 +15,7 @@ type ActiveData = { id: string; prompt: string; side: "left" | "right" };
 export function FloatingRobot() {
   const ref = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState<ActiveData | null>(null);
-  const [muted, setMuted] = useState(isRobotMuted());
+  // ❌ MUTED STATE KADHUN TAKLI AAHE
   const activeIdRef = useRef<string | null>(null);
   const target = useRef({ x: 0, y: 0, scale: 1, opacity: 0 });
   const cur = useRef({ x: 0, y: 0, scale: 0.8, opacity: 0 });
@@ -48,14 +48,15 @@ export function FloatingRobot() {
       if (best) {
         const id = best.dataset.robotAnchor!;
         if (id !== activeIdRef.current) {
-          const isFirst = activeIdRef.current === null;
+          // const isFirst = activeIdRef.current === null; // ❌ GARJECHE NAHI
           activeIdRef.current = id;
           setActive({
             id,
             prompt: best.dataset.robotPrompt ?? "",
             side: (best.dataset.robotSide as "left" | "right") ?? "right",
           });
-          if (!isFirst) playWhoosh();
+          
+          // ❌ playWhoosh() LOGIC KADHUN TAKLE AAHE
         }
         const r = best.getBoundingClientRect();
         const cx = r.left + r.width / 2;
@@ -63,7 +64,6 @@ export function FloatingRobot() {
         target.current.x = cx - SIZE / 2;
         target.current.y = cy - SIZE / 2;
         const minDim = Math.min(r.width, r.height);
-        // Scale relative to anchor box, but cap so the robot always fits in SIZE
         target.current.scale = Math.max(0.55, Math.min(1.15, minDim / 460));
         target.current.opacity = 1;
       } else {
@@ -91,18 +91,8 @@ export function FloatingRobot() {
 
   return (
     <>
-      <button
-        data-hover
-        onClick={() => {
-          const next = !muted;
-          setRobotMuted(next);
-          setMuted(next);
-        }}
-        aria-label={muted ? "Unmute robot sounds" : "Mute robot sounds"}
-        className="fixed bottom-6 left-6 z-[9980] w-10 h-10 rounded-full bg-slate-900/70 backdrop-blur-md border border-white/10 text-cyan-200 hover:text-cyan-100 hover:bg-slate-900/90 transition-colors flex items-center justify-center shadow-lg"
-      >
-        {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-      </button>
+      {/* ❌ MUTE/UNMUTE BUTTON CHE LOGIC PURNA KADHUN TAKLE AAHE */}
+      
     <div
       ref={ref}
       className="fixed top-0 left-0 z-30 pointer-events-none will-change-transform"

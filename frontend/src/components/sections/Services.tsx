@@ -57,12 +57,7 @@ const services = [
   },
 ];
 
-const process = [
-  { step: "01", title: "Discover", desc: "Audit goals, users, and constraints." },
-  { step: "02", title: "Design", desc: "Architecture + interactive prototypes." },
-  { step: "03", title: "Build", desc: "Ship in tight loops with weekly demos." },
-  { step: "04", title: "Launch", desc: "Deploy, monitor, iterate, and grow." },
-];
+
 
 export function Services() {
   return (
@@ -163,53 +158,6 @@ export function Services() {
           );
         })}
       </div>
-
-      {/* Process strip */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-80px" }}
-        transition={{ duration: 0.7 }}
-        className="mt-16 sm:mt-20 rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/60 to-slate-950/80 p-6 sm:p-8 lg:p-10 relative overflow-hidden"
-      >
-        <div className="absolute inset-0 bg-grid-dots opacity-30 pointer-events-none" />
-        <div className="absolute -top-10 -right-10 w-60 h-60 rounded-full bg-gradient-to-br from-cyan-400/15 to-blue-600/10 blur-3xl pointer-events-none" />
-
-        <div className="relative flex items-center gap-3 mb-6">
-          <span className="w-8 h-8 rounded-lg bg-cyan-400/15 border border-cyan-400/30 text-cyan-300 flex items-center justify-center">
-            <Zap className="w-4 h-4" />
-          </span>
-          <h4 className="text-lg sm:text-xl font-bold text-white tracking-tight">
-            How we'll work together
-          </h4>
-        </div>
-
-        <div className="relative grid sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-          {process.map((p, i) => (
-            <motion.div
-              key={p.step}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-40px" }}
-              transition={{ duration: 0.5, delay: 0.1 + i * 0.1 }}
-              className="relative rounded-2xl bg-white/[0.03] border border-white/10 p-5 group hover:border-cyan-400/30 transition-colors"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-br from-cyan-400 to-blue-600">
-                  {p.step}
-                </span>
-                {i < process.length - 1 && (
-                  <ArrowRight className="hidden lg:block w-4 h-4 text-white/20 group-hover:text-cyan-300 transition-colors" />
-                )}
-              </div>
-              <h5 className="text-sm font-bold text-white tracking-wide uppercase mb-1">
-                {p.title}
-              </h5>
-              <p className="text-xs text-white/55 leading-relaxed">{p.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
     </section>
   );
 }

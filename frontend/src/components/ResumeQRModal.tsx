@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
-import { X, Download, ScanLine, Smartphone, Check } from "lucide-react";
-import { downloadResume, getResumeBlobUrl, RESUME_FILE } from "@/lib/resume";
+import { X, Download, ScanLine, Smartphone, Check, ExternalLink } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -10,37 +9,29 @@ type Props = {
 };
 
 export function ResumeQRModal({ open, onClose }: Props) {
-  const [blobUrl, setBlobUrl] = useState<string>("");
-  const [pageUrl, setPageUrl] = useState<string>("");
   const [downloaded, setDownloaded] = useState(false);
+  const [pageUrl, setPageUrl] = useState<string>("");
 
   useEffect(() => {
     if (!open) return;
-    const url = getResumeBlobUrl();
-    setBlobUrl(url);
-    // For QR we need a public URL the phone can hit. Blob URLs aren't reachable
-    // by another device. Use the current origin + a marker that triggers download
-    // for any visitor (handled in App via ?dl=resume).
-    const origin = window.location.origin + window.location.pathname;
-    setPageUrl(`${origin}?dl=resume`);
-    return () => URL.revokeObjectURL(url);
-  }, [open]);
+    
+    // Mobile var scan kelyavar direct PDF open honyasathi link
+    const origin = window.location.origin;
+    setPageUrl(`${origin}/Certi.pdf`);
 
-  useEffect(() => {
-    if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
+    
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
   }, [open, onClose]);
 
-  const handleDownload = () => {
-    downloadResume();
+  const handleDownloadClick = () => {
     setDownloaded(true);
-    setTimeout(() => setDownloaded(false), 2400);
+    setTimeout(() => setDownloaded(false), 3000);
   };
 
   return (
@@ -67,7 +58,6 @@ export function ResumeQRModal({ open, onClose }: Props) {
             <button
               data-hover
               onClick={onClose}
-              aria-label="Close"
               className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-slate-900 border border-white/10 text-white/70 hover:bg-cyan-400 hover:text-slate-950 transition-colors flex items-center justify-center"
             >
               <X className="w-4 h-4" />
@@ -98,39 +88,22 @@ export function ResumeQRModal({ open, onClose }: Props) {
               >
                 {/* Scan beam */}
                 <motion.div
-                  initial={{ y: 0 }}
                   animate={{ y: ["0%", "100%", "0%"] }}
                   transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
                   className="absolute inset-x-5 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_18px_2px_rgba(56,189,248,0.7)] pointer-events-none"
                   style={{ top: "10%" }}
                 />
-                {/* Corner brackets */}
-                {[
-                  "top-2 left-2 border-t-2 border-l-2",
-                  "top-2 right-2 border-t-2 border-r-2",
-                  "bottom-2 left-2 border-b-2 border-l-2",
-                  "bottom-2 right-2 border-b-2 border-r-2",
-                ].map((c) => (
-                  <span
-                    key={c}
-                    className={`absolute w-4 h-4 border-cyan-400 rounded-sm ${c}`}
-                  />
-                ))}
+                
                 {pageUrl && (
                   <QRCodeSVG
                     value={pageUrl}
-                    size={208}
+                    size={200}
                     bgColor="#ffffff"
                     fgColor="#0c4a6e"
                     level="M"
-                    includeMargin={false}
                   />
                 )}
               </motion.div>
-
-              <p className="text-[11px] text-white/40 break-all px-4">
-                {pageUrl}
-              </p>
 
               <div className="relative">
                 <div className="absolute inset-x-0 top-1/2 h-px bg-white/10" />
@@ -139,35 +112,34 @@ export function ResumeQRModal({ open, onClose }: Props) {
                 </span>
               </div>
 
-              <button
+              {/* ✅ DIRECT DOWNLOAD LINK BUTTON */}
+              <a
                 data-hover
-                onClick={handleDownload}
-                disabled={downloaded}
-                className="w-full px-6 py-3.5 rounded-full bg-gradient-cta text-white font-bold text-xs tracking-[0.22em] uppercase flex items-center justify-center gap-2 hover:shadow-[0_10px_40px_-10px_rgba(56,189,248,0.7)] transition-shadow disabled:opacity-80"
+                href="/Certi.pdf"
+                download="Ambar_Resume.pdf"
+                onClick={handleDownloadClick}
+                className="w-full px-6 py-3.5 rounded-full bg-gradient-cta text-white font-bold text-xs tracking-[0.22em] uppercase flex items-center justify-center gap-2 hover:shadow-[0_10px_40px_-10px_rgba(56,189,248,0.7)] transition-shadow no-underline"
               >
                 {downloaded ? (
                   <>
-                    <Check className="w-4 h-4" /> Downloaded
+                    <Check className="w-4 h-4" /> Download Started
                   </>
                 ) : (
                   <>
                     <Download className="w-4 h-4" /> Download Now
                   </>
                 )}
-              </button>
+              </a>
 
-              {blobUrl && (
-                <a
-                  data-hover
-                  href={blobUrl}
-                  download={RESUME_FILE}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block text-[11px] text-cyan-300 hover:text-cyan-200 transition-colors"
-                >
-                  Open PDF in a new tab →
-                </a>
-              )}
+              <a
+                data-hover
+                href="/Certi.pdf"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-[11px] text-cyan-300 hover:text-cyan-200 transition-colors underline underline-offset-4"
+              >
+                <ExternalLink className="w-3 h-3" /> Open PDF in a new tab
+              </a>
             </div>
           </motion.div>
         </motion.div>

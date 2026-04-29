@@ -86,10 +86,10 @@
   --input: 217 33% 15%;
   --ring: 262 83% 58%;
 
-  --app-font-sans: 'Inter', sans-serif;
+  --app-font-sans: "Inter", sans-serif;
   --app-font-serif: Georgia, serif;
   --app-font-mono: Menlo, monospace;
-  
+
   --radius: 0.75rem;
   --spacing: 0.25rem;
 }
@@ -134,7 +134,7 @@
   body {
     @apply font-sans antialiased bg-background text-foreground overflow-x-hidden;
   }
-  
+
   html {
     scroll-behavior: smooth;
   }
@@ -157,7 +157,10 @@
 }
 
 .bg-grid-dots {
-  background-image: radial-gradient(rgba(56, 189, 248, 0.18) 1px, transparent 1px);
+  background-image: radial-gradient(
+    rgba(56, 189, 248, 0.18) 1px,
+    transparent 1px
+  );
   background-size: 28px 28px;
 }
 
@@ -181,4 +184,21 @@ html.magic-cursor-active * {
 
 .bg-gradient-radial {
   background: radial-gradient(circle at center, var(--tw-gradient-stops));
+}
+
+/* Prevent horizontal scroll on all devices */
+html,
+body {
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
+}
+
+/* Optional: hide scrollbar on mobile icon row but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

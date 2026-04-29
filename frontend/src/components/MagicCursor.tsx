@@ -14,7 +14,6 @@ export function MagicCursor() {
     if (typeof window === "undefined") return;
     if (window.matchMedia("(hover: none)").matches) return;
 
-    // --- FIX: Default cursor purn pane band karne ---
     const style = document.createElement("style");
     style.innerHTML = `
       * { cursor: none !important; }
@@ -45,15 +44,15 @@ export function MagicCursor() {
       lastY = e.clientY;
 
       if (speed > 2 && trail.current.length < 120) { 
-        const count = Math.min(Math.floor(speed / 5), 3);
+        const count = Math.min(Math.floor(speed / 5), 2);
         for (let i = 0; i < count; i++) {
           trail.current.push({
             x: e.clientX,
             y: e.clientY,
-            a: 0.7,
-            r: Math.random() * 1.8 + 0.8,
-            vx: (Math.random() - 0.5) * 1.5,
-            vy: (Math.random() - 0.5) * 1.5,
+            a: 0.6,
+            r: Math.random() * 1.5 + 0.5,
+            vx: (Math.random() - 0.5) * 1.2,
+            vy: (Math.random() - 0.5) * 1.2,
             hue: Math.random() > 0.5 ? 185 : 275, 
           });
         }
@@ -62,22 +61,12 @@ export function MagicCursor() {
 
     window.addEventListener("mousemove", onMove);
 
-    // Hover detection logic
-    const handleOver = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest("button, a, [data-hover], input, select")) {
-        ringRef.current?.classList.add("hovering");
-      } else {
-        ringRef.current?.classList.remove("hovering");
-      }
-    };
-    window.addEventListener("mouseover", handleOver);
-
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
     const tick = () => {
-      ringPos.current.x = lerp(ringPos.current.x, mouse.current.x, 0.15);
-      ringPos.current.y = lerp(ringPos.current.y, mouse.current.y, 0.15);
+      // FIX: Ring fast follow karnyasathi 0.15 varun 0.35 kela
+      ringPos.current.x = lerp(ringPos.current.x, mouse.current.x, 0.35);
+      ringPos.current.y = lerp(ringPos.current.y, mouse.current.y, 0.35);
 
       if (arrowRef.current) {
         arrowRef.current.style.transform = `translate3d(${mouse.current.x}px, ${mouse.current.y}px, 0)`;
@@ -91,8 +80,8 @@ export function MagicCursor() {
         const p = trail.current[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.a -= 0.025; 
-        p.r *= 0.98;
+        p.a -= 0.03; 
+        p.r *= 0.97;
 
         if (p.a <= 0) {
           trail.current.splice(i, 1);
@@ -101,7 +90,7 @@ export function MagicCursor() {
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${p.hue}, 100%, 70%, ${p.a})`;
+        ctx.fillStyle = `hsla(${p.hue}, 100%, 75%, ${p.a})`;
         ctx.fill();
       }
       raf.current = requestAnimationFrame(tick);
@@ -112,9 +101,7 @@ export function MagicCursor() {
       cancelAnimationFrame(raf.current);
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("resize", resize);
-      window.removeEventListener("mouseover", handleOver);
-      document.head.removeChild(style); // Cleanup styles
-      document.documentElement.style.cursor = 'auto';
+      if (document.head.contains(style)) document.head.removeChild(style);
     };
   }, []);
 
@@ -123,25 +110,18 @@ export function MagicCursor() {
       <style>{`
         .magic-ring {
           position: fixed;
-          top: -12px; 
-          left: -12px;
-          width: 24px;
-          height: 24px;
-          border: 1.5px solid rgba(34, 211, 238, 0.8);
+          top: 0; 
+          left: 0;
+          margin-top: -10px; /* Center adjustment */
+          margin-left: -10px;
+          width: 20px;
+          height: 20px;
+          border: 2px solid #22d3ee; /* Thoda strong color */
           border-radius: 50%;
           pointer-events: none;
           z-index: 10000;
-          transition: width 0.2s, height 0.2s, top 0.2s, left 0.2s, background 0.2s, border-color 0.2s;
           will-change: transform;
-        }
-        .magic-ring.hovering {
-          width: 44px;
-          height: 44px;
-          top: -22px;
-          left: -22px;
-          background: rgba(34, 211, 238, 0.1);
-          border-color: #a78bfa;
-          border-width: 1px;
+          /* Transition kadhlya mule movement smooth aani instant hotey */
         }
         .magic-canvas {
           position: fixed;
@@ -163,7 +143,7 @@ export function MagicCursor() {
       <canvas ref={canvasRef} className="magic-canvas" />
       <div ref={ringRef} className="magic-ring" />
       <div ref={arrowRef} className="magic-arrow">
-        <svg width="20" height="20" viewBox="0 0 24 24" style={{ transform: 'translate(-10%, -10%)' }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" style={{ transform: 'translate(-2px, -2px)' }}>
           <path
             d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"
             fill="#22d3ee"
