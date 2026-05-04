@@ -25,11 +25,11 @@ const projects: Project[] = [
     description:
       "A real-time collaboration platform with WebRTC video calls, shared cursors, and live document editing for distributed engineering teams. Scaled to 50K monthly active users on a serverless backend.",
     tech: [
-      { name: "Next.js", logo: "/next.svg" },
-      { name: "WebRTC", logo: "/webrtc.png" },
-      { name: "Socket.io", logo: "/socket.png" },
-      { name: "MongoDB", logo: "/MongoDB.png" },
-      { name: "express", logo: "/ex.png" },
+      { name: "Next.js",   logo: "/next.svg"      },
+      { name: "WebRTC",    logo: "/webrtc.png"     },
+      { name: "Socket.io", logo: "/socket.png"     },
+      { name: "MongoDB",   logo: "/MongoDB.png"    },
+      { name: "Express",   logo: "/ex.png"         },
     ],
     image: project1Img,
     link: "#",
@@ -42,11 +42,11 @@ const projects: Project[] = [
     description:
       "Drag-and-drop visual builder for autonomous LLM agent workflows with real-time execution monitoring, branching logic, and multi-model routing across OpenAI, Anthropic, and open-source providers.",
     tech: [
-      { name: "React", logo: "/React.png" },
-      { name: "Firebase", logo: "/Firebase.png" },
-      { name: "Framer", logo: "/framer.svg" },
-      { name: "Supabase", logo: "/icons8-supabase-48.png" },
-      { name: "PostgreSQL", logo: "/PostgreSQL.png" },
+      { name: "React",      logo: "/React.png"                },
+      { name: "Firebase",   logo: "/Firebase.png"             },
+      { name: "Framer",     logo: "/framer.svg"               },
+      { name: "Supabase",   logo: "/icons8-supabase-48.png"   },
+      { name: "PostgreSQL", logo: "/PostgreSQL.png"           },
     ],
     image: project2Img,
     link: "#",
@@ -59,11 +59,11 @@ const projects: Project[] = [
     description:
       "Next-generation e-commerce platform with personalized AI recommendations, predictive inventory analytics, and a Stripe-powered checkout that converts 38% above industry baseline.",
     tech: [
-      { name: "Node.js", logo: "/Node.js.png" },
-      { name: "Tailwind", logo: "/Tailwind CSS.png" },
-      { name: "Three.js", logo: "/Three.js.png" },
-      { name: "Git", logo: "/git.svg" },
-      { name: "TypeScript", logo: "/ts.svg" },
+      { name: "Node.js",     logo: "/Node.js.png"      },
+      { name: "Tailwind",    logo: "/Tailwind CSS.png"  },
+      { name: "Three.js",    logo: "/Three.js.png"      },
+      { name: "Git",         logo: "/git.svg"           },
+      { name: "TypeScript",  logo: "/ts.svg"            },
     ],
     image: project3Img,
     link: "#",
@@ -83,13 +83,11 @@ function TechIcon({ name, logo }: { name: string; logo: string }) {
       onMouseLeave={() => setHovered(false)}
     >
       <div className="relative">
-        {/* Soft blurred background glow (appears on hover) */}
         <div
           className={`absolute inset-0 rounded-full bg-purple-500/30 blur-md transition-opacity duration-300 ${
             hovered ? "opacity-100" : "opacity-0"
           }`}
         />
-        {/* Perfect circle with border & dark background */}
         <div
           className={`w-10 h-10 rounded-full bg-slate-800/90 border transition-all duration-300 flex items-center justify-center ${
             hovered
@@ -106,7 +104,6 @@ function TechIcon({ name, logo }: { name: string; logo: string }) {
           />
         </div>
       </div>
-      {/* Tooltip above circle with scale animation */}
       <AnimatePresence>
         {hovered && (
           <motion.div
@@ -128,7 +125,7 @@ function TiltCard({ project }: { project: Project }) {
   const ref = useRef<HTMLDivElement>(null);
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
-  const rx = useSpring(useTransform(my, [-0.5, 0.5], [10, -10]), { stiffness: 200, damping: 18 });
+  const rx = useSpring(useTransform(my, [-0.5, 0.5], [10, -10]),  { stiffness: 200, damping: 18 });
   const ry = useSpring(useTransform(mx, [-0.5, 0.5], [-12, 12]), { stiffness: 200, damping: 18 });
   const glareX = useTransform(mx, [-0.5, 0.5], ["10%", "90%"]);
   const glareY = useTransform(my, [-0.5, 0.5], ["10%", "90%"]);
@@ -137,14 +134,10 @@ function TiltCard({ project }: { project: Project }) {
   const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!ref.current) return;
     const r = ref.current.getBoundingClientRect();
-    mx.set((e.clientX - r.left) / r.width - 0.5);
-    my.set((e.clientY - r.top) / r.height - 0.5);
+    mx.set((e.clientX - r.left) / r.width  - 0.5);
+    my.set((e.clientY - r.top)  / r.height - 0.5);
   };
-  const onLeave = () => {
-    mx.set(0);
-    my.set(0);
-    setHovering(false);
-  };
+  const onLeave = () => { mx.set(0); my.set(0); setHovering(false); };
 
   return (
     <motion.div
@@ -182,7 +175,11 @@ function TiltCard({ project }: { project: Project }) {
               alt={project.title}
               className="w-full h-auto"
               animate={hovering ? { y: ["0%", "-50%"] } : { y: "0%" }}
-              transition={hovering ? { duration: 6, ease: "linear", repeat: Infinity, repeatType: "reverse" } : { duration: 0.6 }}
+              transition={
+                hovering
+                  ? { duration: 6, ease: "linear", repeat: Infinity, repeatType: "reverse" }
+                  : { duration: 0.6 }
+              }
               style={{ minHeight: "100%" }}
             />
           </div>
@@ -210,11 +207,8 @@ function TiltCard({ project }: { project: Project }) {
             </div>
           </div>
 
-          <p className="text-white/70 leading-relaxed text-sm">
-            {project.description}
-          </p>
+          <p className="text-white/70 leading-relaxed text-sm">{project.description}</p>
 
-          {/* Tech stack section – perfect circles with tooltips & hover effects */}
           <div className="flex flex-wrap gap-3 mt-4">
             {project.tech.map((t) => (
               <TechIcon key={t.name} name={t.name} logo={t.logo} />
@@ -222,7 +216,7 @@ function TiltCard({ project }: { project: Project }) {
           </div>
 
           <div className="relative h-16 overflow-hidden">
-            <motion.div 
+            <motion.div
               className="flex items-center gap-3 absolute inset-x-0 bottom-0"
               initial={{ y: 80 }}
               animate={hovering ? { y: 0 } : { y: 80 }}
@@ -252,11 +246,17 @@ function TiltCard({ project }: { project: Project }) {
 export function Projects() {
   return (
     <section id="projects" className="py-24 sm:py-32 scroll-mt-24 relative">
+
+      {/*
+        Robot anchor: zero-width sentinel pinned to the RIGHT edge.
+        FloatingRobot places the robot to the RIGHT of this element,
+        so it never overlaps with project cards or the section heading.
+      */}
       <div
-        className="hidden lg:block absolute top-0 right-0 w-[260px] h-[260px] pointer-events-none"
+        className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-64 pointer-events-none"
         data-robot-anchor="projects"
-        data-robot-side="left"
-        data-robot-prompt="Built. Shipped. Used."
+        data-robot-side="right"
+        data-robot-prompt="🚀 Built. Shipped. Loved by users."
       />
 
       <motion.div
@@ -269,7 +269,6 @@ export function Projects() {
         <p className="text-cyan-400 font-mono text-xs tracking-[0.3em] uppercase mb-3">
           / My Work
         </p>
-
         <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
           Featured{" "}
           <span className="text-gradient-primary drop-shadow-[0_0_12px_rgba(34,211,238,0.7)]">

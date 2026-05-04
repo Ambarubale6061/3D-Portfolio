@@ -5,14 +5,33 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
   <title>Ambar — Portfolio</title>
+  <meta name="description"
+    content="Full Stack Developer crafting scalable apps, real-time systems, and AI-powered experiences." />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Preconnect to Google Fonts & Spline CDN for faster resolution -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://unpkg.com" crossorigin />
 
-  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-  <script src="https://unpkg.com/three-globe@2.31.0/dist/three-globe.min.js"></script>
+  <!-- Inter font — display=swap prevents FOIT -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+
+  <!--
+    THREE.js & three-globe are loaded here so Vite's externals don't
+    double-bundle them. Keep these BEFORE the module entry point.
+  -->
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js" defer></script>
+  <script src="https://unpkg.com/three-globe@2.31.0/dist/three-globe.min.js" defer></script>
+
+  <!--
+    Spline viewer web component.
+    type="module" + no defer — the browser handles module deferred evaluation
+    automatically, so it won't block the parser but WILL be available
+    before the spline-viewer custom element is stamped into the DOM by React.
+  -->
+  <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.59/build/spline-viewer.js"></script>
 </head>
 
 <body>

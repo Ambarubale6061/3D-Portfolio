@@ -1,15 +1,6 @@
 import { motion } from "framer-motion";
 import {
-  Code2,
-  Server,
-  Layout,
-  BrainCircuit,
-  Smartphone,
-  Search,
-  ArrowRight,
-  Zap,
-  Database,
-  Globe,
+  Code2, Server, Layout, BrainCircuit, Search, Database,
 } from "lucide-react";
 
 const services = [
@@ -57,20 +48,23 @@ const services = [
   },
 ];
 
-
-
 export function Services() {
   return (
     <section id="services" className="py-20 sm:py-28 scroll-mt-24 relative">
-      {/* Robot anchor (subtle, side) */}
+
+      {/*
+        Robot anchor: a zero-width invisible element pinned to the LEFT edge
+        of the viewport flow. The FloatingRobot reads this anchor's bounding
+        rect and positions the robot to its left, leaving all content clear.
+        Using fixed left:0 width:1px so it never competes with any card.
+      */}
       <div
-        className="hidden lg:block absolute top-12 right-0 w-[280px] h-[280px] pointer-events-none"
+        className="absolute left-0 top-1/2 -translate-y-1/2 w-px h-64 pointer-events-none"
         data-robot-anchor="services"
         data-robot-side="left"
-        data-robot-prompt="Need a web app? I build full stack applications with modern technologies."
+        data-robot-prompt="👋 Hi! Need a web app? I build full-stack apps with modern tech."
       />
 
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -79,19 +73,17 @@ export function Services() {
         className="text-center mb-14"
       >
         <p className="text-cyan-400 font-mono text-xs tracking-[0.3em] uppercase mb-3">
-  / Services
-</p>
-
-<h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
-  What I <span className="text-cyan-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.7)]">Build</span>
-</h2>
-
-<p className="text-white/55 mt-5 max-w-2xl mx-auto text-sm sm:text-lg">
-  Solutions focused on performance, scalability, and real-world impact.
-</p>
+          / Services
+        </p>
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+          What I{" "}
+          <span className="text-cyan-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.7)]">Build</span>
+        </h2>
+        <p className="text-white/55 mt-5 max-w-2xl mx-auto text-sm sm:text-lg">
+          Solutions focused on performance, scalability, and real-world impact.
+        </p>
       </motion.div>
 
-      {/* Service cards */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
         {services.map((s, i) => {
           const Icon = s.icon;
@@ -106,54 +98,30 @@ export function Services() {
               className="group relative rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/70 to-slate-950/80 backdrop-blur-xl p-6 sm:p-7 overflow-hidden cursor-default"
               whileHover={{ y: -4 }}
             >
-              {/* Accent glow on hover */}
               <div
                 className={`absolute -inset-px rounded-3xl bg-gradient-to-br ${s.accent} opacity-0 group-hover:opacity-30 blur-xl transition-opacity duration-500 -z-10`}
               />
-              {/* Corner accent */}
               <div
                 className={`absolute -top-20 -right-20 w-44 h-44 rounded-full bg-gradient-to-br ${s.accent} opacity-15 blur-2xl pointer-events-none transition-opacity duration-500 group-hover:opacity-30`}
               />
-
-              {/* Floating index */}
-             
-
-              {/* Icon */}
               <motion.div
                 whileHover={{ rotate: -6 }}
                 transition={{ type: "spring", stiffness: 200, damping: 15 }}
                 className={`relative w-14 h-14 rounded-2xl bg-gradient-to-br ${s.accent} flex items-center justify-center text-white shadow-[0_10px_30px_-10px_rgba(56,189,248,0.5)] mb-5`}
               >
                 <Icon className="w-6 h-6" strokeWidth={2.2} />
-                <span
-                  className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${s.accent} opacity-50 blur-md -z-10`}
-                />
+                <span className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${s.accent} opacity-50 blur-md -z-10`} />
               </motion.div>
-
-              <h4 className="text-xl font-bold text-white tracking-tight mb-2">
-                {s.title}
-              </h4>
-              <p className="text-sm text-white/60 leading-relaxed mb-5">
-                {s.blurb}
-              </p>
-
-              {/* Deliverables */}
+              <h4 className="text-xl font-bold text-white tracking-tight mb-2">{s.title}</h4>
+              <p className="text-sm text-white/60 leading-relaxed mb-5">{s.blurb}</p>
               <ul className="space-y-1.5 mb-5">
                 {s.deliverables.map((d) => (
-                  <li
-                    key={d}
-                    className="flex items-center gap-2 text-xs text-white/70"
-                  >
-                    <span
-                      className={`w-1 h-1 rounded-full bg-gradient-to-r ${s.accent}`}
-                    />
+                  <li key={d} className="flex items-center gap-2 text-xs text-white/70">
+                    <span className={`w-1 h-1 rounded-full bg-gradient-to-r ${s.accent}`} />
                     {d}
                   </li>
                 ))}
               </ul>
-
-              {/* Footer link */}
-              
             </motion.div>
           );
         })}

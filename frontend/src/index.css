@@ -50,7 +50,6 @@
 }
 
 :root {
-  /* Default to Dark Mode for premium slate + electric violet vibe */
   --background: 222 47% 5%;
   --foreground: 210 40% 98%;
 
@@ -62,7 +61,7 @@
   --popover-foreground: 210 40% 98%;
   --popover-border: 217 33% 15%;
 
-  --primary: 199 89% 55%; /* Electric Cyan/Blue */
+  --primary: 199 89% 55%;
   --primary-foreground: 210 40% 98%;
   --primary-border: 199 89% 65%;
 
@@ -133,6 +132,8 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground overflow-x-hidden;
+    /* Promote body to its own compositing layer — smoother momentum scroll on iOS */
+    -webkit-overflow-scrolling: touch;
   }
 
   html {
@@ -140,6 +141,7 @@
   }
 }
 
+/* ── Utility classes ───────────────────────────────────────────────────────── */
 .glass-panel {
   @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl;
 }
@@ -164,6 +166,7 @@
   background-size: 28px 28px;
 }
 
+/* ── Marquee animation ─────────────────────────────────────────────────────── */
 @keyframes marquee {
   0% {
     transform: translateX(0%);
@@ -177,16 +180,18 @@
   animation: marquee 30s linear infinite;
 }
 
+/* ── Magic cursor ──────────────────────────────────────────────────────────── */
 html.magic-cursor-active,
 html.magic-cursor-active * {
   cursor: none !important;
 }
 
+/* ── Radial gradient helper ────────────────────────────────────────────────── */
 .bg-gradient-radial {
   background: radial-gradient(circle at center, var(--tw-gradient-stops));
 }
 
-/* Prevent horizontal scroll on all devices */
+/* ── Overflow guard ────────────────────────────────────────────────────────── */
 html,
 body {
   overflow-x: hidden;
@@ -194,11 +199,148 @@ body {
   position: relative;
 }
 
-/* Optional: hide scrollbar on mobile icon row but keep functionality */
+/* ── Scrollbar hide utility ────────────────────────────────────────────────── */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* ── GPU acceleration for fixed/animated overlays ─────────────────────────── */
+/*
+   will-change is already applied inline on the robot and cursor divs.
+   Adding transform3d here via CSS ensures the browser creates compositing
+   layers even before the JS sets explicit transforms.
+*/
+.fixed[style*="will-change"] {
+  transform: translateZ(0);
+}
+
+/* ── Content-visibility for off-screen sections ───────────────────────────── */
+/*
+   content-visibility: auto tells the browser it can skip layout and paint
+   for sections not in the viewport. We pair it with contain-intrinsic-size
+   so the scrollbar height is stable before sections are rendered.
+   NOTE: this does NOT affect IntersectionObserver — Framer Motion's
+   whileInView works correctly with content-visibility.
+*/
+#about,
+#skills,
+#services,
+#projects,
+#experience,
+#testimonials,
+#contact {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 600px;
+}
+
+/* ── Reduce motion — honour OS preference ──────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .animate-bounce,
+  .animate-ping,
+  .animate-pulse {
+    animation: none !important;
+  }
+}
+
+/* ── Mobile touch optimisations ───────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Avoid repaints from fixed children on every scroll tick */
+  main {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Slightly reduce blur radius — mobile GPUs struggle with heavy backdrop-blur */
+  .backdrop-blur-2xl {
+    --tw-backdrop-blur: blur(16px);
+  }
+  .backdrop-blur-xl {
+    --tw-backdrop-blur: blur(12px);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   ADDITIONS / OVERRIDES for index.css
+   Paste these at the very END of your existing index.css file.
+   (Everything above stays exactly as it is.)
+───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Hero: full-bleed (no left sidebar offset) ────────────────────────────── */
+/*
+  The Hero section is full-bleed — it must NOT inherit the
+  md:pl-24 / lg:pl-32 padding that the content wrapper adds.
+  In App.tsx we moved <Hero /> OUTSIDE the constrained wrapper, so no
+  extra CSS override is needed here. This comment is left as a reminder.
+*/
+
+/* ── Spline viewer: remove the default white watermark bar ──────────────────── */
+spline-viewer::part(logo),
+spline-viewer::part(watermark) {
+  display: none !important;
+}
+
+/* Hide the "built with Spline" badge that appears bottom-right */
+spline-viewer > div[class*="watermark"],
+spline-viewer > div[class*="logo"] {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* ── Mesh / grid background ────────────────────────────────────────────────── */
+.mesh-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse 80% 50% at 50% -10%,
+      rgba(34, 211, 238, 0.06) 0%,
+      transparent 60%
+    ),
+    hsl(222 47% 5%);
+}
+
+/* ── Hero stat dividers ────────────────────────────────────────────────────── */
+.hero-stat + .hero-stat {
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  padding-left: 1.25rem;
+  margin-left: 0.25rem;
+}
+
+/* ── Smooth fade-in for the Spline scene ────────────────────────────────────── */
+@keyframes splineFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── Prevent Spline from creating a horizontal scrollbar ────────────────────── */
+#hero {
+  overflow: hidden;
+}
+
+/* ── Ensure spline-viewer fills its parent div completely ────────────────────── */
+spline-viewer {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ── Mobile: robot is decorative, reduce its visual weight ──────────────────── */
+@media (max-width: 767px) {
+  /* On mobile the Spline scene sits behind the text.
+     Shift it right and reduce opacity so the copy stays readable. */
+  #hero .spline-wrap {
+    opacity: 0.35;
+    transform: translateX(15%);
+  }
 }
