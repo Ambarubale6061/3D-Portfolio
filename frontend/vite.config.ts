@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
-const port     = Number(process.env.PORT ?? 5173);
+// ✅ Base path (can be overridden via env if needed)
 const basePath = process.env.BASE_PATH ?? "/";
 
 export default defineConfig({
@@ -16,35 +16,19 @@ export default defineConfig({
 
   resolve: {
     alias: {
-      "@": path.resolve(import.meta.dirname, "src"),
+      "@": path.resolve(__dirname, "src"),
     },
-    /*
-     * Ensure only one copy of React / Three ends up in the bundle even if
-     * sub-packages bring their own peer-dep references.
-     */
+    // Prevent duplicate packages in bundle
     dedupe: ["react", "react-dom", "three"],
   },
 
-  root: path.resolve(import.meta.dirname),
-
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist"),
+    outDir: "dist",
     emptyOutDir: true,
-
-    /*
-     * three.js + three-globe are loaded from unpkg in index.html at runtime,
-     * so we DON'T bundle them → keeps the app chunk small.
-     * Comment these out only if you switch to a fully self-hosted approach.
-     */
-    // rollupOptions.external is set below
-
     chunkSizeWarningLimit: 1400,
 
     rollupOptions: {
-      /*
-       * These are provided via <script> tags in index.html (CDN).
-       * Rollup won't bundle them; it will emit `window.THREE` etc. references.
-       */
+      // External CDN libs (not bundled)
       external: ["three", "three-globe"],
 
       output: {
@@ -53,65 +37,42 @@ export default defineConfig({
           "three-globe": "ThreeGlobe",
         },
 
-        /**
-         * Manual chunk strategy
-         * ─────────────────────
-         * Split so the browser can cache stable vendor code separately and
-         * so the initial JS payload stays small.
-         */
+        // ✅ Code splitting optimization
         manualChunks: (id) => {
-          // React core
           if (
             id.includes("node_modules/react/") ||
             id.includes("node_modules/react-dom/")
-          ) {
-            return "vendor-react";
-          }
+          ) return "vendor-react";
 
-          // Framer Motion — used in every section
-          if (id.includes("node_modules/framer-motion")) {
+          if (id.includes("node_modules/framer-motion"))
             return "vendor-motion";
-          }
 
-          // Radix UI + shadcn primitives
           if (
             id.includes("node_modules/@radix-ui") ||
             id.includes("node_modules/cmdk") ||
             id.includes("node_modules/vaul")
-          ) {
-            return "vendor-ui";
-          }
+          ) return "vendor-ui";
 
-          // Lucide icons
-          if (id.includes("node_modules/lucide-react")) {
+          if (id.includes("node_modules/lucide-react"))
             return "vendor-icons";
-          }
 
-          // React Three Fiber ecosystem (only if not externalised)
           if (
             id.includes("node_modules/@react-three") ||
             id.includes("node_modules/postprocessing")
-          ) {
-            return "vendor-r3f";
-          }
+          ) return "vendor-r3f";
         },
       },
     },
   },
 
+  // ✅ Dev server only (no proxy in production)
   server: {
-    port,
+    port: 5173,
     host: "0.0.0.0",
-    proxy: {
-      "/api": {
-        target: "http://localhost:3001",
-        changeOrigin: true,
-      },
-    },
   },
 
   preview: {
-    port,
+    port: 5173,
     host: "0.0.0.0",
   },
 });

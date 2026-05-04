@@ -40,8 +40,8 @@ export function ChatBubble() {
     abortRef.current = controller;
 
     try {
-      const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
-      const res = await fetch(`${base}/api/chat`, {
+      const API = import.meta.env.VITE_API_URL;
+      const res = await fetch(`${API}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
