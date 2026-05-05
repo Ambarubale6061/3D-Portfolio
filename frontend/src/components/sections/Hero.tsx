@@ -1,153 +1,185 @@
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useSpring } from "framer-motion";
 import { ArrowRight, ChevronDown, Download } from "lucide-react";
 import { TypeAnimation } from "react-type-animation";
 import { useEffect, useRef, useState } from "react";
+import { SplineRobot } from "@/components/SplineRobot";
 
-/* ─── Spline viewer (custom element) ──────────────────────────────────────── */
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      "spline-viewer": React.DetailedHTMLProps<
-        React.HTMLAttributes<HTMLElement> & { url?: string; loading?: string },
-        HTMLElement
-      >;
-    }
-  }
-}
-
-/* Stagger helper */
+/* ─── Shared entrance animation factory ───────────────────────────────────── */
 const fadeUp = (delay: number) => ({
-  initial: { opacity: 0, y: 18 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] as const, delay },
+  initial:    { opacity: 0, y: 18 },
+  animate:    { opacity: 1, y: 0  },
+  transition: { duration: 0.55, ease: "easeOut" as const, delay },
 });
+
+const SPLINE_URL =
+  "https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode";
+
+/* ─── Max parallax shift (px) for the whole robot container ──────────────── */
+const SHIFT_DESKTOP = 12;
+const SHIFT_MOBILE  = 5;
 
 export function Hero() {
   const [splineReady, setSplineReady] = useState(false);
-  const viewerRef = useRef<HTMLElement | null>(null);
-  const wrapRef   = useRef<HTMLDivElement>(null);
 
-  /* ── Mount spline-viewer once (strict-mode safe) ── */
+  /* ═══════════════════════════════════════════════════════════════════════════
+     CONTAINER PARALLAX  (separate from the head cursor-follow in SplineRobot)
+     ─ Gently floats the whole robot container with the cursor
+     ─ SplineRobot handles the internal head/body rotation independently
+  ═══════════════════════════════════════════════════════════════════════════ */
+  const rawX    = useMotionValue(0);
+  const rawY    = useMotionValue(0);
+  const springX = useSpring(rawX, { stiffness: 38, damping: 20, mass: 1.1 });
+  const springY = useSpring(rawY, { stiffness: 38, damping: 20, mass: 1.1 });
+
   useEffect(() => {
-    if (!wrapRef.current || viewerRef.current) return;
+    const isMobile = () => window.innerWidth < 768;
 
-    const el = document.createElement("spline-viewer") as HTMLElement;
-    el.setAttribute(
-      "url",
-      "https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
-    );
-    el.setAttribute("loading", "lazy");
-    /* GPU-composited layer from the start — no layout thrash on opacity change */
-    el.style.cssText =
-      "width:100%;height:100%;display:block;transform:translateZ(0);will-change:opacity;";
+    const onMouseMove = (e: MouseEvent) => {
+      if (isMobile()) return;
+      const nx = (e.clientX / window.innerWidth  - 0.5) * 2;
+      const ny = (e.clientY / window.innerHeight - 0.5) * 2;
+      rawX.set(nx * SHIFT_DESKTOP);
+      rawY.set(ny * SHIFT_DESKTOP);
+    };
 
-    const onLoad   = () => setSplineReady(true);
-    const fallback = setTimeout(() => setSplineReady(true), 5000);
+    const onTouchMove = (e: TouchEvent) => {
+      const t = e.touches[0];
+      if (!t) return;
+      const nx = (t.clientX / window.innerWidth  - 0.5) * 2;
+      const ny = (t.clientY / window.innerHeight - 0.5) * 2;
+      rawX.set(nx * SHIFT_MOBILE);
+      rawY.set(ny * SHIFT_MOBILE);
+    };
 
-    el.addEventListener("load", onLoad);
-    wrapRef.current.appendChild(el);
-    viewerRef.current = el;
+    window.addEventListener("mousemove", onMouseMove, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
 
     return () => {
-      clearTimeout(fallback);
-      el.removeEventListener("load", onLoad);
-      try { wrapRef.current?.removeChild(el); } catch { /* already gone */ }
-      viewerRef.current = null;
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("touchmove", onTouchMove);
     };
-  }, []);
+  }, [rawX, rawY]);
 
   return (
+    /*
+     * Section layout strategy
+     * ────────────────────────
+     * Mobile  (< md): flex-col — Spline block on top, text flows below
+     * Desktop (≥ md): block    — Spline absolute full-bleed, text absolute left
+     */
     <section
       id="hero"
-      className="relative w-full min-h-[100dvh] overflow-hidden"
-      /* Solid bg prevents flash-of-unstyled-content before Spline paints */
+      className="
+        relative flex flex-col md:block
+        w-full min-h-[100dvh] overflow-hidden
+      "
       style={{ background: "hsl(222 47% 5%)" }}
     >
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          LAYER 0 — SPLINE ROBOT (full-bleed, own GPU compositor layer)
-          • absolute inset-0  → covers the ENTIRE hero section
-          • pointer-events: none → zero hit-test cost, no input blocking
-          • Opacity on the wrapper div, not on the canvas element — avoids
-            forcing a WebGL context repaint during the fade-in
-      ══════════════════════════════════════════════════════════════════════ */}
-      <div
-        ref={wrapRef}
+      {/* ═══════════════════════════════════════════════════════════════════
+          LAYER 0 — SPLINE ROBOT
+
+          ✅ Uses <SplineRobot> which:
+            • Loads via dynamic import + requestIdleCallback (no jank)
+            • Handles its own loading spinner
+            • Rotates head/body to follow the cursor internally via RAF
+
+          Mobile  : relative · h-[60vh] · full-width
+          Desktop : absolute · inset-0 · full-bleed
+
+          The motion.div adds a gentle 12px container parallax on top of
+          SplineRobot's internal head-rotation — two independent effects.
+      ═══════════════════════════════════════════════════════════════════ */}
+      <motion.div
         aria-hidden
-        className="absolute inset-0 z-0 pointer-events-none"
+        className="
+          relative h-[60vh] w-full shrink-0 pointer-events-none
+          md:absolute md:inset-0 md:h-auto md:w-auto
+        "
         style={{
-          opacity:    splineReady ? 1 : 0,
-          transition: "opacity 1s ease",
-          willChange: "opacity",
+          willChange: "transform, opacity",
+          x: springX,
+          y: springY,
+        }}
+      >
+        <SplineRobot
+          url={SPLINE_URL}
+          height="100%"
+          onLoad={() => setSplineReady(true)}
+        />
+      </motion.div>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          LAYER 1a — MOBILE GRADIENT BRIDGE  (hidden on desktop)
+      ═══════════════════════════════════════════════════════════════════ */}
+      <div
+        aria-hidden
+        className="md:hidden relative z-[1] shrink-0 pointer-events-none"
+        style={{
+          height:     "100px",
+          marginTop:  "-100px",
+          background: "linear-gradient(to bottom, transparent 0%, hsl(222 47% 5%) 100%)",
         }}
       />
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          LAYER 1 — SINGLE COMPOSITE OVERLAY  (1 div, 2 gradients)
-          • Angled left vignette: text is fully readable over the robot
-          • Bottom fade: hero blends smoothly into the next section
-          Removed: blur filters, grid-dots, separate glow divs — all were
-          expensive paint ops that caused the jank.
-      ══════════════════════════════════════════════════════════════════════ */}
+      {/* ═══════════════════════════════════════════════════════════════════
+          LAYER 1b — DESKTOP OVERLAY  (hidden on mobile)
+      ═══════════════════════════════════════════════════════════════════ */}
       <div
         aria-hidden
-        className="absolute inset-0 z-[1] pointer-events-none"
+        className="hidden md:block absolute inset-0 z-[1] pointer-events-none"
         style={{
           background: `
             linear-gradient(
               108deg,
               hsl(222 47% 5% / 0.97)  0%,
               hsl(222 47% 5% / 0.88) 22%,
-              hsl(222 47% 5% / 0.52) 42%,
-              hsl(222 47% 5% / 0.15) 60%,
+              hsl(222 47% 5% / 0.50) 42%,
+              hsl(222 47% 5% / 0.12) 60%,
               transparent             76%
             ),
             linear-gradient(
               to top,
-              hsl(222 47% 5%)         0%,
-              hsl(222 47% 5% / 0.0)  22%
+              hsl(222 47% 5%)        0%,
+              transparent            22%
             )
           `,
         }}
       />
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ═══════════════════════════════════════════════════════════════════
           LAYER 2 — CONTENT
-      ══════════════════════════════════════════════════════════════════════ */}
-      <div className="relative z-10 w-full min-h-[100dvh] flex items-center">
+      ═══════════════════════════════════════════════════════════════════ */}
+      <div
+        className="
+          relative z-10
+          w-full px-6 sm:px-8 pt-4 pb-24
+          md:absolute md:inset-0 md:flex md:items-center
+          md:px-0 md:pt-0 md:pb-0
+        "
+      >
         <div
           className="
-            w-full max-w-[1400px] mx-auto
-            px-6 sm:px-10 md:pl-24 md:pr-8 lg:pl-32 lg:pr-16
-            pt-28 pb-32
+            w-full
+            md:max-w-[1400px] md:mx-auto
+            md:pl-24 lg:pl-32 md:pr-8 lg:pr-16
+            md:pt-28 md:pb-28
           "
         >
-          {/* Text column — sits fully inside the dark vignette zone */}
           <div className="max-w-[460px] flex flex-col gap-5">
 
             {/* ── Greeting pill ── */}
             <motion.div {...fadeUp(0.05)}>
-              <span
-                className="
-                  inline-flex items-center gap-2
-                  px-3 py-1 rounded-full
-                  border border-cyan-400/20 bg-cyan-400/5
-                  text-[10px] font-semibold tracking-[0.28em] uppercase
-                "
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
-                <span className="text-white/65">Hi, I'm</span>
-                <span
-                  className="text-cyan-400"
-                  style={{ textShadow: "0 0 14px rgba(34,211,238,0.55)" }}
-                >
-                  Ambar
-                </span>
-              </span>
-            </motion.div>
+  <span className="text-white/65">Hi, I'm </span>
+  <span
+    className="text-cyan-400"
+    style={{ textShadow: "0 0 14px rgba(34,211,238,0.55)" }}
+  >
+    Ambar
+  </span>
+</motion.div>
 
-            {/* ── Animated heading ──
-                font-bold (not black) + smaller clamp = lighter, cleaner look   */}
+            {/* ── Animated heading ── */}
             <motion.h1
               {...fadeUp(0.15)}
               className="font-bold text-white leading-[1.08] tracking-[-0.01em]"
@@ -155,12 +187,9 @@ export function Hero() {
             >
               <TypeAnimation
                 sequence={[
-                  "FULL STACK\nDEVELOPER",
-                  2400,
-                  "AI BUILDER",
-                  2000,
-                  "PROBLEM\nSOLVER",
-                  2400,
+                  "FULL STACK\nDEVELOPER", 2400,
+                  "AI BUILDER",             2000,
+                  "PROBLEM\nSOLVER",         2400,
                 ]}
                 wrapper="span"
                 speed={40}
@@ -168,8 +197,6 @@ export function Hero() {
                 cursor={false}
                 style={{ whiteSpace: "pre-line", display: "inline" }}
               />
-              {/* Static cursor — animate-pulse removed: was triggering a
-                  continuous repaint even when nothing else on screen moved */}
               <span
                 className="text-cyan-400 ml-0.5"
                 style={{ textShadow: "0 0 10px rgba(34,211,238,0.75)" }}
@@ -181,7 +208,7 @@ export function Hero() {
             {/* ── Sub-headline ── */}
             <motion.p
               {...fadeUp(0.25)}
-              className="text-sm sm:text-[15px] font-medium text-white/70 leading-snug tracking-wide"
+              className="text-sm sm:text-[15px] font-medium text-white/70 leading-snug"
             >
               Building scalable digital experiences that{" "}
               <span
@@ -203,7 +230,7 @@ export function Hero() {
 
             {/* ── CTAs ── */}
             <motion.div
-              {...fadeUp(0.4)}
+              {...fadeUp(0.40)}
               className="flex flex-wrap items-center gap-3 pt-1"
             >
               <a
@@ -242,49 +269,13 @@ export function Hero() {
                 Resume
               </a>
             </motion.div>
-
-            {/* ── Stats row ── */}
-            <motion.div
-              {...fadeUp(0.48)}
-              className="flex items-stretch pt-2"
-            >
-              {[
-                { value: "2+",  label: "Years Exp." },
-                { value: "15+", label: "Projects"   },
-                { value: "10+", label: "Tech Stack"  },
-              ].map(({ value, label }, i) => (
-                <div
-                  key={label}
-                  className="flex flex-col pr-6"
-                  style={
-                    i > 0
-                      ? {
-                          paddingLeft: "1.5rem",
-                          borderLeft: "1px solid rgba(255,255,255,0.08)",
-                        }
-                      : {}
-                  }
-                >
-                  <span
-                    className="text-[1.3rem] font-bold text-white leading-none"
-                    style={{ textShadow: "0 0 14px rgba(34,211,238,0.3)" }}
-                  >
-                    {value}
-                  </span>
-                  <span className="text-[9px] font-medium tracking-[0.18em] uppercase text-white/35 mt-1">
-                    {label}
-                  </span>
-                </div>
-              ))}
-            </motion.div>
-
           </div>
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════════════════
+      {/* ═══════════════════════════════════════════════════════════════════
           LAYER 3 — SCROLL INDICATOR
-      ══════════════════════════════════════════════════════════════════════ */}
+      ═══════════════════════════════════════════════════════════════════ */}
       <motion.a
         href="#about"
         data-hover
@@ -297,7 +288,7 @@ export function Hero() {
           text-white/35 hover:text-cyan-300 transition-colors duration-200
         "
       >
-        <span className="w-5 h-8 rounded-full border border-white/18 flex items-start justify-center pt-1.5">
+        <span className="w-5 h-8 rounded-full border border-white/20 flex items-start justify-center pt-1.5">
           <motion.span
             animate={{ y: [0, 7, 0], opacity: [0.9, 0.15, 0.9] }}
             transition={{ duration: 1.9, repeat: Infinity, ease: "easeInOut" }}

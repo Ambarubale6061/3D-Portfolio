@@ -1,229 +1,164 @@
+"use client";
+
+import React from "react";
 import { motion } from "framer-motion";
 import {
-  Code2, Database, Cloud, Cpu, Wrench, Sparkles,
-  Atom, Server, Layers, FileCode, Terminal, Boxes,
-  GitBranch, Container, Globe, Brain,
+  Atom, Server, Database, Brain, Layers, FileCode,
+  Sparkles, Cpu, Code2, Globe, Zap, DatabaseIcon,
+  Cloud, ShieldCheck, Workflow, 
+  Layout, Boxes, Braces
 } from "lucide-react";
 
-type Tech  = { name: string; Icon: typeof Code2 };
-type Skill = { name: string; level: number };
+type TechItem = {
+  name: string;
+  Icon: any;
+  color: string;
+  glow: string;
+};
 
-const categories: {
-  title:  string;
-  blurb:  string;
-  icon:   typeof Code2;
-  accent: string;
-  skills: Skill[];
-  tech:   Tech[];
-}[] = [
-  {
-    title: "Frontend",
-    blurb: "Building responsive and user-friendly interfaces.",
-    icon: Atom,
-    accent: "from-cyan-400 to-blue-500",
-    skills: [
-      { name: "React",              level: 90 },
-      { name: "TypeScript",         level: 85 },
-      { name: "JavaScript (ES6+)",  level: 90 },
-      { name: "Tailwind CSS",       level: 92 },
-      { name: "Next.js",            level: 80 },
-      { name: "Responsive Design",  level: 88 },
-    ],
-    tech: [
-      { name: "React",         Icon: Atom     },
-      { name: "Next.js",       Icon: Layers   },
-      { name: "TypeScript",    Icon: FileCode },
-      { name: "JavaScript",    Icon: FileCode },
-      { name: "Tailwind",      Icon: Sparkles },
-      { name: "Vite",          Icon: Wrench   },
-      { name: "Framer Motion", Icon: Sparkles },
-    ],
-  },
-  {
-    title: "Backend",
-    blurb: "Developing scalable APIs and server-side logic.",
-    icon: Server,
-    accent: "from-emerald-400 to-teal-500",
-    skills: [
-      { name: "Node.js / Express",    level: 88 },
-      { name: "Java / Spring Boot",   level: 82 },
-      { name: "Python / Flask",       level: 75 },
-      { name: "REST APIs",            level: 90 },
-      { name: "Authentication / JWT", level: 85 },
-      { name: "API Integration",      level: 88 },
-      { name: "Error Handling",       level: 85 },
-    ],
-    tech: [
-      { name: "Node.js",     Icon: Server    },
-      { name: "Express",     Icon: Server    },
-      { name: "Java",        Icon: Cpu       },
-      { name: "Flask",       Icon: Container },
-      { name: "Python",      Icon: FileCode  },
-      { name: "Spring Boot", Icon: Boxes     },
-      { name: "MongoDB",     Icon: Database  },
-      { name: "Firebase",    Icon: Cloud     },
-      { name: "Postman",     Icon: Wrench    },
-      { name: "Git",         Icon: GitBranch },
-    ],
-  },
-  {
-    title: "Database",
-    blurb: "Managing structured and real-time data systems.",
-    icon: Database,
-    accent: "from-violet-400 to-fuchsia-500",
-    skills: [
-      { name: "MongoDB",          level: 88 },
-      { name: "PostgreSQL",       level: 82 },
-      { name: "Supabase",         level: 85 },
-      { name: "Firebase",         level: 80 },
-      { name: "Database Design",  level: 82 },
-      { name: "CRUD Operations",  level: 90 },
-    ],
-    tech: [
-      { name: "MongoDB",  Icon: Database },
-      { name: "Postgres", Icon: Database },
-      { name: "Supabase", Icon: Boxes    },
-      { name: "Firebase", Icon: Cloud    },
-      { name: "SQL",      Icon: Terminal },
-    ],
-  },
-  {
-    title: "AI Integration",
-    blurb: "Adding smart AI features into applications.",
-    icon: Brain,
-    accent: "from-amber-400 to-orange-500",
-    skills: [
-      { name: "OpenAI APIs",        level: 75 },
-      { name: "Prompt Engineering", level: 78 },
-      { name: "API Integration",    level: 85 },
-      { name: "Chatbot Features",   level: 80 },
-      { name: "Basic AI Workflows", level: 75 },
-      { name: "RAG",                level: 70 },
-    ],
-    tech: [
-      { name: "OpenAI",     Icon: Brain    },
-      { name: "APIs",       Icon: Globe    },
-      { name: "Node.js",    Icon: Server   },
-      { name: "JavaScript", Icon: FileCode },
-    ],
-  },
+const row1: TechItem[] = [
+  { name: "React", Icon: Atom, color: "text-cyan-400", glow: "shadow-cyan-500/20" },
+  { name: "Next.js", Icon: Layers, color: "text-white", glow: "shadow-white/20" },
+  { name: "TypeScript", Icon: FileCode, color: "text-blue-400", glow: "shadow-blue-500/20" },
+  { name: "AI Agent", Icon: Brain, color: "text-purple-400", glow: "shadow-purple-500/20" },
+  { name: "Tailwind", Icon: Sparkles, color: "text-sky-300", glow: "shadow-sky-400/20" },
+  { name: "Node.js", Icon: Server, color: "text-emerald-500", glow: "shadow-emerald-500/20" },
+  { name: "Supabase", Icon: Zap, color: "text-emerald-400", glow: "shadow-emerald-400/20" },
+  { name: "Prisma", Icon: Braces, color: "text-indigo-300", glow: "shadow-indigo-400/20" },
+];
+
+const row2: TechItem[] = [
+  { name: "Docker", Icon: Boxes, color: "text-blue-500", glow: "shadow-blue-600/20" },
+  { name: "Python", Icon: Code2, color: "text-yellow-400", glow: "shadow-yellow-500/20" },
+  { name: "PostgreSQL", Icon: DatabaseIcon, color: "text-indigo-400", glow: "shadow-indigo-500/20" },
+  { name: "Redis", Icon: Zap, color: "text-red-500", glow: "shadow-red-500/20" },
+  { name: "AWS", Icon: Cloud, color: "text-orange-400", glow: "shadow-orange-400/20" },
+  { name: "Zustand", Icon: Workflow, color: "text-amber-500", glow: "shadow-amber-500/20" },
+  { name: "Auth.js", Icon: ShieldCheck, color: "text-pink-500", glow: "shadow-pink-500/20" },
+  { name: "Framer", Icon: Layout, color: "text-fuchsia-400", glow: "shadow-fuchsia-400/20" },
 ];
 
 export function Skills() {
-  return (
-    <section id="skills" className="py-20 sm:py-28 scroll-mt-24 relative">
-
-      {/*
-        Robot anchor: zero-width sentinel pinned to the RIGHT edge.
-        FloatingRobot places the robot to the RIGHT of this element,
-        so it never overlaps with skill cards or the section heading.
-      */}
-      <div
-        className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-64 pointer-events-none"
-        data-robot-anchor="skills"
-        data-robot-side="right"
-        data-robot-prompt="🧠 Frontend, Backend, DB & AI — the full stack!"
-      />
-
+  const renderRow = (items: TechItem[], direction: "left" | "right", duration: number) => (
+    <div className="relative flex items-center w-full py-12"> 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-100px" }}
-        transition={{ duration: 0.7 }}
-        className="text-center mb-14"
+        className="flex gap-12 px-10 items-center"
+        animate={{
+          x: direction === "left" ? ["0%", "-50%"] : ["-50%", "0%"],
+        }}
+        transition={{
+          duration: duration,
+          ease: "linear",
+          repeat: Infinity,
+        }}
       >
+        {[...items, ...items, ...items].map((tech, index) => (
+          <motion.div 
+            key={index} 
+            className="group relative flex flex-col items-center justify-center min-w-[120px]"
+            animate={{
+              y: [0, -10, 0, 10, 0]
+            }}
+            transition={{
+              duration: 6,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: index * 0.4
+            }}
+          >
+            <div className={`relative w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center rounded-full 
+              bg-white/[0.03] border border-white/10 backdrop-blur-md 
+              shadow-lg ${tech.glow} transition-all duration-500 
+              group-hover:scale-110 group-hover:bg-white/[0.08] group-hover:border-white/20`}>
+              
+              <tech.Icon 
+                className={`w-10 h-10 sm:w-12 sm:h-12 ${tech.color} drop-shadow-md transition-all duration-500 group-hover:rotate-[10deg]`} 
+                strokeWidth={1.2} 
+              />
+              <div className={`absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-transparent to-white/10 opacity-0 group-hover:opacity-100 transition-opacity`} />
+            </div>
+            
+            <div className="absolute -bottom-8 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-2 group-hover:translate-y-0 text-center w-full z-20">
+              <span className={`text-[10px] font-bold tracking-[0.2em] uppercase whitespace-nowrap ${tech.color}`}>
+                {tech.name}
+              </span>
+            </div>
+          </motion.div>
+        ))}
+      </motion.div>
+    </div>
+  );
+
+  return (
+    <section id="skills" className="relative py-24 bg-transparent w-full overflow-hidden">
+      {/* Ambient Glows - Transparent background so they blend with the layout */}
+      <div className="absolute inset-0 pointer-events-none">
+        <motion.div 
+          animate={{ scale: [1, 1.2, 1], opacity: [0.05, 0.1, 0.05] }}
+          transition={{ duration: 12, repeat: Infinity }}
+          className="absolute -top-24 -left-20 w-[600px] h-[600px] bg-cyan-500/10 blur-[120px] rounded-full"
+        />
+        <motion.div 
+          animate={{ scale: [1.2, 1, 1.2], opacity: [0.05, 0.1, 0.05] }}
+          transition={{ duration: 15, repeat: Infinity }}
+          className="absolute -bottom-32 -right-20 w-[700px] h-[700px] bg-blue-600/10 blur-[140px] rounded-full"
+        />
+      </div>
+
+      {/* Header Section */}
+      <motion.div
+
+        initial={{ opacity: 0, y: 20 }}
+
+        whileInView={{ opacity: 1, y: 0 }}
+
+        viewport={{ once: true, margin: "-100px" }}
+
+        transition={{ duration: 0.7 }}
+
+        className="text-center mb-10 relative z-10"
+
+      >
+
         <p className="text-cyan-400 font-mono text-xs tracking-[0.3em] uppercase mb-3">
+
           / Skills & Expertise
+
         </p>
+
         <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+
           Building with{" "}
+
           <span className="text-cyan-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.7)]">
+
             Modern Technologies
+
           </span>
+
         </h2>
+
         <p className="text-white/55 mt-5 max-w-2xl mx-auto text-sm sm:text-lg">
-          Technologies, tools, and skills I use to build scalable, high-performance applications.
+
+          Tools and technologies I use to build modern web applications.
+
         </p>
+
       </motion.div>
 
-      <div className="grid sm:grid-cols-2 gap-5 lg:gap-6">
-        {categories.map((cat, i) => {
-          const Icon = cat.icon;
-          return (
-            <motion.div
-              key={cat.title}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-60px" }}
-              transition={{ duration: 0.55, delay: i * 0.08 }}
-              className="group relative rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/70 to-slate-950/80 backdrop-blur-xl p-5 sm:p-6 overflow-hidden"
-            >
-              <div
-                className={`absolute -inset-px rounded-3xl bg-gradient-to-br ${cat.accent} opacity-0 group-hover:opacity-25 blur-xl transition-opacity duration-500 -z-10`}
-              />
-              <div
-                className={`absolute -top-16 -right-16 w-40 h-40 rounded-full bg-gradient-to-br ${cat.accent} opacity-10 blur-2xl pointer-events-none`}
-              />
-
-              <div className="flex items-center gap-3 mb-4">
-                <span
-                  className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${cat.accent} flex items-center justify-center text-white shadow-lg shrink-0`}
-                >
-                  <Icon className="w-5 h-5" strokeWidth={2.4} />
-                </span>
-                <div className="min-w-0">
-                  <h4 className="text-lg font-bold text-white tracking-tight">{cat.title}</h4>
-                  <p className="text-[11px] text-white/45 leading-tight">{cat.blurb}</p>
-                </div>
-              </div>
-
-              <div className="space-y-2.5 mb-5">
-                {cat.skills.map((s) => (
-                  <div key={s.name}>
-                    <div className="flex justify-between text-[11px] mb-1">
-                      <span className="text-white/75">{s.name}</span>
-                      <span
-                        className={`font-mono font-bold bg-gradient-to-r ${cat.accent} bg-clip-text text-transparent`}
-                      >
-                        {s.level}%
-                      </span>
-                    </div>
-                    <div className="h-1 rounded-full bg-white/5 overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        whileInView={{ width: `${s.level}%` }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
-                        className={`h-full rounded-full bg-gradient-to-r ${cat.accent}`}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="pt-4 border-t border-white/5">
-                <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/40 mb-2.5">
-                  Technologies
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {cat.tech.map((t) => {
-                    const TIcon = t.Icon;
-                    return (
-                      <span
-                        key={t.name}
-                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-semibold text-white/75 hover:bg-white/10 transition-colors"
-                      >
-                        <TIcon className="w-3 h-3 text-cyan-300" strokeWidth={2.4} />
-                        {t.name}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
+      {/* Circle Tech Rows with Masking */}
+      <div 
+        className="flex flex-col w-full relative z-10"
+        style={{
+          maskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)',
+          WebkitMaskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)'
+        }}
+      >
+        {renderRow(row1, "right", 40)}
+        {renderRow(row2, "left", 45)}
       </div>
+
+      {/* Bottom subtle air streak */}
     </section>
   );
 }
