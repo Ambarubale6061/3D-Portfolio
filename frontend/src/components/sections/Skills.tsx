@@ -1,164 +1,184 @@
 "use client";
 
-import React from "react";
-import { motion } from "framer-motion";
-import {
-  Atom, Server, Database, Brain, Layers, FileCode,
-  Sparkles, Cpu, Code2, Globe, Zap, DatabaseIcon,
-  Cloud, ShieldCheck, Workflow, 
-  Layout, Boxes, Braces
+import React, { useEffect, useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  Atom, Layers, FileCode, Sparkles, Server, Cpu, 
+  Database as DbIcon, Zap, Braces, Boxes, Code2, 
+  Cloud, ShieldCheck, Workflow, Layout, Globe,
+  Terminal, Share2, Binary, HardDrive, Key, GitBranch,
+  Brain, Bot, MessageSquare, Wand2, Github, Container, Figma
 } from "lucide-react";
 
-type TechItem = {
-  name: string;
-  Icon: any;
-  color: string;
-  glow: string;
+const skillData = {
+  interface: [
+    { name: "React", Icon: Atom, color: "#22d3ee" },
+    { name: "Next.js", Icon: Layers, color: "#ffffff" },
+    { name: "TypeScript", Icon: FileCode, color: "#60a5fa" },
+    { name: "Tailwind", Icon: Sparkles, color: "#38bdf8" },
+    { name: "Framer", Icon: Layout, color: "#f472b6" },
+    { name: "Three.js", Icon: Boxes, color: "#ffffff" },
+    { name: "Figma", Icon: Figma, color: "#f24e1e" },
+    { name: "HTML5", Icon: Globe, color: "#f97316" },
+    { name: "CSS3", Icon: Monitor, color: "#3b82f6" },
+    { name: "Zustand", Icon: Workflow, color: "#f59e0b" },
+  ],
+  core: [
+    { name: "Node.js", Icon: Server, color: "#10b981" },
+    { name: "Python", Icon: Code2, color: "#facc15" },
+    { name: "AI Agents", Icon: Bot, color: "#f472b6" },
+    { name: "OpenAI", Icon: Brain, color: "#10a37f" },
+    { name: "Go", Icon: Terminal, color: "#00add8" },
+    { name: "FastAPI", Icon: Zap, color: "#05998b" },
+    { name: "GraphQL", Icon: Share2, color: "#e10098" },
+    { name: "Microservices", Icon: Cpu, color: "#fbbf24" },
+    { name: "LangChain", Icon: Link, color: "#ffffff" },
+    { name: "Express", Icon: Server, color: "#ffffff" },
+  ],
+  data: [
+    { name: "PostgreSQL", Icon: DbIcon, color: "#818cf8" },
+    { name: "Supabase", Icon: Zap, color: "#3ecf8e" },
+    { name: "MongoDB", Icon: HardDrive, color: "#47adb5" },
+    { name: "Redis", Icon: Zap, color: "#ef4444" },
+    { name: "Prisma", Icon: Braces, color: "#ffffff" },
+    { name: "Firebase", Icon: Cloud, color: "#ffca28" },
+    { name: "Elastic", Icon: Search, color: "#feb019" },
+    { name: "Vector DB", Icon: Database, color: "#f59e0b" },
+    { name: "Neo4j", Icon: GitBranch, color: "#008cc1" },
+    { name: "Vault", Icon: Key, color: "#ffecb3" },
+  ],
+  workflow: [
+    { name: "Docker", Icon: Boxes, color: "#2496ed" },
+    { name: "AWS", Icon: Cloud, color: "#ff9900" },
+    { name: "Git", Icon: Github, color: "#ffffff" },
+    { name: "Vercel", Icon: Zap, color: "#ffffff" },
+    { name: "Actions", Icon: Workflow, color: "#2088ff" },
+    { name: "Linux", Icon: Terminal, color: "#fcc624" },
+    { name: "Postman", Icon: MessageSquare, color: "#ff6c37" },
+    { name: "K8s", Icon: Container, color: "#326ce5" },
+    { name: "Security", Icon: ShieldCheck, color: "#10b981" },
+    { name: "Nginx", Icon: Server, color: "#009639" },
+  ]
 };
 
-const row1: TechItem[] = [
-  { name: "React", Icon: Atom, color: "text-cyan-400", glow: "shadow-cyan-500/20" },
-  { name: "Next.js", Icon: Layers, color: "text-white", glow: "shadow-white/20" },
-  { name: "TypeScript", Icon: FileCode, color: "text-blue-400", glow: "shadow-blue-500/20" },
-  { name: "AI Agent", Icon: Brain, color: "text-purple-400", glow: "shadow-purple-500/20" },
-  { name: "Tailwind", Icon: Sparkles, color: "text-sky-300", glow: "shadow-sky-400/20" },
-  { name: "Node.js", Icon: Server, color: "text-emerald-500", glow: "shadow-emerald-500/20" },
-  { name: "Supabase", Icon: Zap, color: "text-emerald-400", glow: "shadow-emerald-400/20" },
-  { name: "Prisma", Icon: Braces, color: "text-indigo-300", glow: "shadow-indigo-400/20" },
-];
+function Monitor(props: any) { return <Layout {...props} />; }
+function Search(props: any) { return <Globe {...props} />; }
+function Database(props: any) { return <DbIcon {...props} />; }
+function Link(props: any) { return <Workflow {...props} />; }
 
-const row2: TechItem[] = [
-  { name: "Docker", Icon: Boxes, color: "text-blue-500", glow: "shadow-blue-600/20" },
-  { name: "Python", Icon: Code2, color: "text-yellow-400", glow: "shadow-yellow-500/20" },
-  { name: "PostgreSQL", Icon: DatabaseIcon, color: "text-indigo-400", glow: "shadow-indigo-500/20" },
-  { name: "Redis", Icon: Zap, color: "text-red-500", glow: "shadow-red-500/20" },
-  { name: "AWS", Icon: Cloud, color: "text-orange-400", glow: "shadow-orange-400/20" },
-  { name: "Zustand", Icon: Workflow, color: "text-amber-500", glow: "shadow-amber-500/20" },
-  { name: "Auth.js", Icon: ShieldCheck, color: "text-pink-500", glow: "shadow-pink-500/20" },
-  { name: "Framer", Icon: Layout, color: "text-fuchsia-400", glow: "shadow-fuchsia-400/20" },
-];
+const SkillCard = ({ skills, title, gradient }: { skills: any[], title: string, gradient: string }) => {
+  const [rotation, setRotation] = useState(0);
+  const requestRef = useRef<number>();
 
-export function Skills() {
-  const renderRow = (items: TechItem[], direction: "left" | "right", duration: number) => (
-    <div className="relative flex items-center w-full py-12"> 
-      <motion.div
-        className="flex gap-12 px-10 items-center"
-        animate={{
-          x: direction === "left" ? ["0%", "-50%"] : ["-50%", "0%"],
-        }}
-        transition={{
-          duration: duration,
-          ease: "linear",
-          repeat: Infinity,
-        }}
-      >
-        {[...items, ...items, ...items].map((tech, index) => (
-          <motion.div 
-            key={index} 
-            className="group relative flex flex-col items-center justify-center min-w-[120px]"
-            animate={{
-              y: [0, -10, 0, 10, 0]
-            }}
-            transition={{
-              duration: 6,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: index * 0.4
-            }}
-          >
-            <div className={`relative w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center rounded-full 
-              bg-white/[0.03] border border-white/10 backdrop-blur-md 
-              shadow-lg ${tech.glow} transition-all duration-500 
-              group-hover:scale-110 group-hover:bg-white/[0.08] group-hover:border-white/20`}>
-              
-              <tech.Icon 
-                className={`w-10 h-10 sm:w-12 sm:h-12 ${tech.color} drop-shadow-md transition-all duration-500 group-hover:rotate-[10deg]`} 
-                strokeWidth={1.2} 
-              />
-              <div className={`absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-transparent to-white/10 opacity-0 group-hover:opacity-100 transition-opacity`} />
-            </div>
-            
-            <div className="absolute -bottom-8 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-2 group-hover:translate-y-0 text-center w-full z-20">
-              <span className={`text-[10px] font-bold tracking-[0.2em] uppercase whitespace-nowrap ${tech.color}`}>
-                {tech.name}
-              </span>
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
-    </div>
-  );
+  useEffect(() => {
+    const animate = () => {
+      setRotation((prev) => prev + 0.6); 
+      requestRef.current = requestAnimationFrame(animate);
+    };
+    requestRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(requestRef.current!);
+  }, []);
 
   return (
-    <section id="skills" className="relative py-24 bg-transparent w-full overflow-hidden">
-      {/* Ambient Glows - Transparent background so they blend with the layout */}
-      <div className="absolute inset-0 pointer-events-none">
-        <motion.div 
-          animate={{ scale: [1, 1.2, 1], opacity: [0.05, 0.1, 0.05] }}
-          transition={{ duration: 12, repeat: Infinity }}
-          className="absolute -top-24 -left-20 w-[600px] h-[600px] bg-cyan-500/10 blur-[120px] rounded-full"
-        />
-        <motion.div 
-          animate={{ scale: [1.2, 1, 1.2], opacity: [0.05, 0.1, 0.05] }}
-          transition={{ duration: 15, repeat: Infinity }}
-          className="absolute -bottom-32 -right-20 w-[700px] h-[700px] bg-blue-600/10 blur-[140px] rounded-full"
-        />
+    <div className="group relative h-[400px] w-full bg-transparent border border-white/5 rounded-[2.5rem] overflow-hidden backdrop-blur-sm transition-all duration-500 hover:border-white/10">
+      <div className={`absolute -top-20 -left-20 w-64 h-64 blur-[100px] opacity-5 rounded-full ${gradient}`} />
+      
+      <div className="relative z-20 p-8 text-center">
+       <h3 className="text-white/40 font-mono text-[9px] sm:text-[11px] uppercase tracking-[0.15em]">
+  {title}
+</h3>
       </div>
 
-      {/* Header Section */}
-      <motion.div
+      <div className="relative w-full h-full flex justify-center items-center -mt-16">
+        {skills.map((skill, index) => {
+          const angle = (index / skills.length) * 360 + rotation;
+          const rad = (angle * Math.PI) / 180;
+          const normalizedAngle = ((angle % 360) + 360) % 360;
+          
+          // Old Logic: Only show name when icon is in the front (active zone)
+          const isActive = normalizedAngle > 80 && normalizedAngle < 100;
+          
+          const x = 120 * Math.cos(rad);
+          const y = 45 * Math.sin(rad); 
+          const zIndex = Math.round(y + 100);
+          const scale = 0.6 + (y + 45) / 90 * 0.5;
 
-        initial={{ opacity: 0, y: 20 }}
+          return (
+            <motion.div 
+              key={`${title}-${skill.name}`} 
+              className="absolute flex flex-col items-center" 
+              style={{ x, y: y + 20, zIndex }} 
+              animate={{ scale, opacity: (y + 45) / 90 + 0.3 }}
+            >
+              <div 
+                className="p-3 rounded-full border bg-white/5 transition-all duration-300"
+                style={{ 
+                  borderColor: isActive ? skill.color : "rgba(255,255,255,0.05)",
+                  boxShadow: isActive ? `0 0 20px ${skill.color}30` : "none"
+                }}
+              >
+                <skill.Icon 
+                  size={28} 
+                  style={{ color: skill.color }} 
+                  strokeWidth={1.5} 
+                />
+              </div>
 
-        whileInView={{ opacity: 1, y: 0 }}
-
-        viewport={{ once: true, margin: "-100px" }}
-
-        transition={{ duration: 0.7 }}
-
-        className="text-center mb-10 relative z-10"
-
-      >
-
-        <p className="text-cyan-400 font-mono text-xs tracking-[0.3em] uppercase mb-3">
-
-          / Skills & Expertise
-
-        </p>
-
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
-
-          Building with{" "}
-
-          <span className="text-cyan-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.7)]">
-
-            Modern Technologies
-
-          </span>
-
-        </h2>
-
-        <p className="text-white/55 mt-5 max-w-2xl mx-auto text-sm sm:text-lg">
-
-          Tools and technologies I use to build modern web applications.
-
-        </p>
-
-      </motion.div>
-
-      {/* Circle Tech Rows with Masking */}
-      <div 
-        className="flex flex-col w-full relative z-10"
-        style={{
-          maskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)',
-          WebkitMaskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)'
-        }}
-      >
-        {renderRow(row1, "right", 40)}
-        {renderRow(row2, "left", 45)}
+              <AnimatePresence>
+                {isActive && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 5 }} 
+                    animate={{ opacity: 1, y: 12 }} 
+                    exit={{ opacity: 0 }} 
+                    className="absolute top-full whitespace-nowrap"
+                  >
+                    <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: skill.color }}>
+                      {skill.name}
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          );
+        })}
       </div>
+    </div>
+  );
+};
 
-      {/* Bottom subtle air streak */}
+export function Skills() {
+  return (
+    <section id="skills" className="relative py-24 bg-transparent w-full px-6 overflow-hidden">
+      <div className="max-w-7xl mx-auto relative z-10">
+        
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.7 }}
+          className="text-center mb-12 relative z-10 px-4"
+        >
+          <p className="text-cyan-400 font-mono text-[10px] sm:text-xs tracking-[0.3em] uppercase mb-3">
+            / Skills & Expertise
+          </p>
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
+            Building with{" "}
+            <span className="text-cyan-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.7)]">
+              Modern Tech
+            </span>
+          </h2>
+          <p className="text-white/55 mt-4 max-w-2xl mx-auto text-xs sm:text-lg font-light">
+            Tools and technologies used to build modern web applications.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <SkillCard skills={skillData.interface} title="Interface & Experience" gradient="bg-cyan-500" />
+          <SkillCard skills={skillData.core} title="Core & Intelligence" gradient="bg-purple-500" />
+          <SkillCard skills={skillData.data} title="Data & Persistence" gradient="bg-emerald-500" />
+          <SkillCard skills={skillData.workflow} title="DevOps & Workflow" gradient="bg-blue-600" />
+        </div>
+      </div>
     </section>
   );
 }
