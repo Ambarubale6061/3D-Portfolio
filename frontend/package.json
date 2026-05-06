@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@react-three/postprocessing": "^3.0.4",
-    "@splinetool/react-spline": "^4.1.0",
+    "@splinetool/runtime": "^1.9.60",
     "framer-motion": "^12.23.24",
     "jspdf": "^4.2.1",
     "lucide-react": "^0.545.0",
@@ -19,8 +19,8 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-type-animation": "^3.2.0",
-    "three": "^0.160.0",
-    "three-globe": "^2.31.0"
+    "three": "^0.184.0",
+    "three-globe": "^2.45.2"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.10.0",

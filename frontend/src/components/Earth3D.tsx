@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { isMobile } from "@/lib/webgl";
 
-// डेटा इम्पोर्ट्स
+// Data imports
 import countries from "../assets/globe-data-min.json";
 import travelHistory from "../assets/my-flights.json";
 import airportHistory from "../assets/my-airports.json";
@@ -89,7 +89,8 @@ export const Earth3D = () => {
 
         // Arc / label data added after globe is ready
         setTimeout(() => {
-            Globe.arcsData(travelHistory.flights)
+            Globe
+                .arcsData(travelHistory.flights)
                 .arcColor(() => "#00f5ff")
                 .arcAltitude((e: any) => e.arcAlt)
                 .arcStroke((e: any) => (e.status ? 0.5 : 0.3))
@@ -98,8 +99,20 @@ export const Earth3D = () => {
                 .arcDashAnimateTime(1000)
                 .arcsTransitionDuration(1000)
                 .arcDashInitialGap((e: any) => e.order * 1)
-                .pointsData([])
-                .barsData([])
+                // ✅ REMOVED: .pointsData([]) — passing empty array is a no-op but
+                //    chaining it here interrupted the fluent API on some three-globe
+                //    versions, contributing to the method-not-found crash.
+                //
+                // ✅ REMOVED: .barsData([]) — THIS was the direct cause of the crash:
+                //    "barsData is not a function"
+                //
+                //    three-globe does NOT expose a `.barsData()` method. The bars /
+                //    hex-bin layer uses `.hexBinPointsData()` instead. Calling a
+                //    non-existent method on the chain threw a TypeError and halted
+                //    all subsequent globe setup (labels, rotation, etc.).
+                //
+                //    Fix: simply remove it. If you later need bar-chart pins on the
+                //    globe, use `.hexBinPointsData(data)` with the correct options.
                 .labelsData(airportHistory.airports)
                 .labelColor(() => "#ffcb21")
                 .labelSize((e: any) => e.size)

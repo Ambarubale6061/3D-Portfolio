@@ -2,20 +2,26 @@ import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from
 import { useRef, useState } from "react";
 import { ArrowUpRight, Github, Globe } from "lucide-react";
 
-// Note: Images are served from the public folder, so no imports needed.
-const project1Img = "/assets/project-1.png";
-const project2Img = "/assets/project-2.png";
-const project3Img = "/assets/project-3.png";
+// ─── Project screenshot images ────────────────────────────────────────────────
+// These paths must match files that actually exist under /public.
+// Drop your real screenshots in at any time — the card will render them
+// automatically. Until then each project shows a branded gradient placeholder.
+// ─────────────────────────────────────────────────────────────────────────────
 
 type Project = {
   title: string;
   tagline: string;
   description: string;
   tech: { name: string; logo: string }[];
-  image: string;
+  /** Absolute path to a screenshot in /public, or null for the gradient placeholder */
+  image: string | null;
   link: string;
   github: string;
   accent: string;
+  /** Tailwind bg gradient used for the placeholder when image === null */
+  placeholderGradient: string;
+  /** Single emoji shown in the placeholder */
+  placeholderIcon: string;
 };
 
 const projects: Project[] = [
@@ -31,10 +37,13 @@ const projects: Project[] = [
       { name: "MongoDB",   logo: "/MongoDB.png"    },
       { name: "Express",   logo: "/ex.png"         },
     ],
-    image: project1Img,
+    // Set to "/project-1.png" once you drop the file into /public
+    image: null,
     link: "#",
     github: "#",
     accent: "from-cyan-400 to-blue-600",
+    placeholderGradient: "from-cyan-950 via-slate-900 to-blue-950",
+    placeholderIcon: "🔗",
   },
   {
     title: "AgenticAI Studio",
@@ -46,12 +55,15 @@ const projects: Project[] = [
       { name: "Firebase",   logo: "/Firebase.png"             },
       { name: "Framer",     logo: "/framer.svg"               },
       { name: "Supabase",   logo: "/icons8-supabase-48.png"   },
-      { name: "PostgreSQL", logo: "/PostgreSQL.png"           },
+      // ✅ Fixed: was "PostgreSQL.png" — public folder contains "PostgresSQL.png"
+      { name: "PostgreSQL", logo: "/PostgresSQL.png"          },
     ],
-    image: project2Img,
+    image: null,
     link: "#",
     github: "#",
     accent: "from-violet-400 to-fuchsia-600",
+    placeholderGradient: "from-violet-950 via-slate-900 to-fuchsia-950",
+    placeholderIcon: "🤖",
   },
   {
     title: "FutureCart",
@@ -65,14 +77,17 @@ const projects: Project[] = [
       { name: "Git",         logo: "/git.svg"           },
       { name: "TypeScript",  logo: "/ts.svg"            },
     ],
-    image: project3Img,
+    image: null,
     link: "#",
     github: "#",
     accent: "from-emerald-400 to-teal-600",
+    placeholderGradient: "from-emerald-950 via-slate-900 to-teal-950",
+    placeholderIcon: "🛒",
   },
 ];
 
-// Tech stack circle item with tooltip and hover effects
+// ─── TechIcon ─────────────────────────────────────────────────────────────────
+
 function TechIcon({ name, logo }: { name: string; logo: string }) {
   const [hovered, setHovered] = useState(false);
 
@@ -101,6 +116,10 @@ function TechIcon({ name, logo }: { name: string; logo: string }) {
             className="w-5 h-5 object-contain"
             animate={hovered ? { scale: 1.1 } : { scale: 1 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
+            // ✅ Graceful degradation: hide broken images instead of showing alt text in an ugly box
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = "none";
+            }}
           />
         </div>
       </div>
@@ -120,6 +139,69 @@ function TechIcon({ name, logo }: { name: string; logo: string }) {
     </div>
   );
 }
+
+// ─── ProjectScreenshot ────────────────────────────────────────────────────────
+// Renders the real image when available; falls back to a branded gradient
+// placeholder that matches the card's accent colours.
+
+function ProjectScreenshot({
+  project,
+  hovering,
+}: {
+  project: Project;
+  hovering: boolean;
+}) {
+  if (project.image) {
+    return (
+      <motion.img
+        src={project.image}
+        alt={project.title}
+        className="w-full h-auto"
+        animate={hovering ? { y: ["0%", "-50%"] } : { y: "0%" }}
+        transition={
+          hovering
+            ? { duration: 6, ease: "linear", repeat: Infinity, repeatType: "reverse" }
+            : { duration: 0.6 }
+        }
+        style={{ minHeight: "100%" }}
+        // ✅ Hide broken images silently
+        onError={(e) => {
+          (e.currentTarget as HTMLImageElement).style.display = "none";
+        }}
+      />
+    );
+  }
+
+  // ─── Gradient placeholder ────────────────────────────────────────────────
+  return (
+    <div
+      className={`absolute inset-0 bg-gradient-to-br ${project.placeholderGradient} flex flex-col items-center justify-center gap-3 select-none`}
+    >
+      {/* Subtle grid pattern */}
+      <div
+        className="absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.5) 1px, transparent 1px)",
+          backgroundSize: "32px 32px",
+        }}
+      />
+
+      {/* Decorative glow blob */}
+      <div
+        className={`absolute w-48 h-48 rounded-full blur-3xl opacity-20 bg-gradient-to-br ${project.accent}`}
+      />
+
+      {/* Icon + label */}
+      <span className="relative text-6xl">{project.placeholderIcon}</span>
+      <span className="relative text-xs font-mono tracking-[0.25em] uppercase text-white/20">
+        screenshot coming soon
+      </span>
+    </div>
+  );
+}
+
+// ─── TiltCard ─────────────────────────────────────────────────────────────────
 
 function TiltCard({ project }: { project: Project }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -156,7 +238,9 @@ function TiltCard({ project }: { project: Project }) {
         className="relative rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/80 to-slate-950/90 backdrop-blur-xl overflow-hidden shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6)]"
         style={{ transformStyle: "preserve-3d" }}
       >
+        {/* ── Browser chrome + screenshot area ── */}
         <div className="relative aspect-[16/10] overflow-hidden bg-slate-950">
+          {/* Browser chrome bar */}
           <div className="absolute top-0 inset-x-0 z-20 flex items-center gap-2 px-4 py-2.5 bg-slate-950/80 backdrop-blur border-b border-white/5">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
             <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
@@ -169,21 +253,12 @@ function TiltCard({ project }: { project: Project }) {
             </div>
           </div>
 
+          {/* Screenshot / placeholder */}
           <div className="absolute inset-0 pt-9">
-            <motion.img
-              src={project.image}
-              alt={project.title}
-              className="w-full h-auto"
-              animate={hovering ? { y: ["0%", "-50%"] } : { y: "0%" }}
-              transition={
-                hovering
-                  ? { duration: 6, ease: "linear", repeat: Infinity, repeatType: "reverse" }
-                  : { duration: 0.6 }
-              }
-              style={{ minHeight: "100%" }}
-            />
+            <ProjectScreenshot project={project} hovering={hovering} />
           </div>
 
+          {/* Glare overlay */}
           <motion.div
             className="absolute inset-0 pointer-events-none mix-blend-overlay opacity-0 group-hover:opacity-60 transition-opacity duration-300"
             style={{
@@ -195,6 +270,7 @@ function TiltCard({ project }: { project: Project }) {
           <div className={`absolute inset-x-0 bottom-0 h-px bg-gradient-to-r ${project.accent}`} />
         </div>
 
+        {/* ── Card body ── */}
         <div className="p-6 space-y-5" style={{ transform: "translateZ(40px)", transformStyle: "preserve-3d" }}>
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -243,15 +319,11 @@ function TiltCard({ project }: { project: Project }) {
   );
 }
 
+// ─── Projects section ─────────────────────────────────────────────────────────
+
 export function Projects() {
   return (
     <section id="projects" className="py-24 sm:py-32 scroll-mt-24 relative">
-
-      {/*
-        Robot anchor: zero-width sentinel pinned to the RIGHT edge.
-        FloatingRobot places the robot to the RIGHT of this element,
-        so it never overlaps with project cards or the section heading.
-      */}
       <div
         className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-64 pointer-events-none"
         data-robot-anchor="projects"
