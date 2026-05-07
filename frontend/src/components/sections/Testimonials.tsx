@@ -128,12 +128,12 @@ export function Testimonials() {
         <p className="text-cyan-400 font-mono text-xs tracking-[0.3em] uppercase mb-3">
           / Testimonials
         </p>
-        <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight whitespace-nowrap">
-          Kind words from{" "}
-          <span className="text-cyan-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.7)]">
-            Satisfied Clients
-          </span>
-        </h2>
+        <h2 className="text-3xl sm:text-5xl font-semibold leading-tight whitespace-nowrap">
+  <span className="text-white">Kind words from</span>{" "}
+  <span className="text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">
+    Satisfied Clients
+  </span>
+</h2>
       </motion.div>
 
       {/* ── Marquee ── */}

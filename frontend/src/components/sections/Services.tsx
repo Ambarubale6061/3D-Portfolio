@@ -75,10 +75,12 @@ export function Services() {
         <p className="text-cyan-400 font-mono text-xs tracking-[0.3em] uppercase mb-3">
           / Services
         </p>
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
-          What I{" "}
-          <span className="text-cyan-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.7)]">Build</span>
-        </h2>
+        <h2 className="text-3xl sm:text-5xl font-semibold mb-6 leading-tight">
+  <span className="text-white">What I</span>{" "}
+  <span className="text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">
+    Build
+  </span>
+</h2>
         <p className="text-white/55 mt-5 max-w-2xl mx-auto text-sm sm:text-lg">
           Solutions focused on performance, scalability, and real-world impact.
         </p>

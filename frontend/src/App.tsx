@@ -53,7 +53,7 @@ function App() {
         <Navbar />
 
         <main className="flex-1 flex flex-col w-full pb-24 md:pb-0">
-          
+
           {/* 1. Hero: Full-Width */}
           <Hero />
 
@@ -64,21 +64,29 @@ function App() {
             </div>
           </Suspense>
 
-          {/* 3. Skills: Full-Width (Container chya baher kadhla aahe) */}
+          {/* 3. Skills: Full-Width */}
           <Suspense fallback={<SectionFallback />}>
             <div className="w-full">
               <Skills />
             </div>
           </Suspense>
 
-          {/* 4. Other sections: Constrained in Container */}
+          {/* 4. Services, Experience, Testimonials, Contact: Constrained */}
           <div className="w-full max-w-350 mx-auto px-4 sm:px-8 md:pl-24 md:pr-8 lg:pl-32 lg:pr-16">
             <Suspense fallback={<SectionFallback />}>
               <Services />
             </Suspense>
-            <Suspense fallback={<SectionFallback />}>
+          </div>
+
+          {/* 5. Projects: Full-Width — pulled out of constrained container */}
+          <Suspense fallback={<SectionFallback />}>
+            <div className="w-full">
               <Projects />
-            </Suspense>
+            </div>
+          </Suspense>
+
+          {/* 6. Remaining sections: Constrained */}
+          <div className="w-full max-w-350 mx-auto px-4 sm:px-8 md:pl-24 md:pr-8 lg:pl-32 lg:pr-16">
             <Suspense fallback={<SectionFallback />}>
               <Experience />
             </Suspense>

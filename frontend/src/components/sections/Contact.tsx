@@ -113,12 +113,12 @@ export function Contact() {
           >
             // Get In Touch
           </motion.span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight mt-3">
-            Let's Build{" "}
-            <span className="text-cyan-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.7)] whitespace-nowrap">
-              Something Legendary
-            </span>
-          </h2>
+          <h2 className="text-3xl sm:text-5xl font-semibold leading-tight mt-3">
+  <span className="text-white">Let's Build</span>{" "}
+  <span className="text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)] whitespace-nowrap">
+    Something Legendary
+  </span>
+</h2>
         </motion.div>
 
         {/* Two-column layout: Left = Earth, Right = Form */}

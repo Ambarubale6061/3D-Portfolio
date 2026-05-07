@@ -1,6 +1,6 @@
-import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
-import { useRef, useState } from "react";
-import { ArrowUpRight, Github, Globe } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
+import { ArrowUpRight, Github } from "lucide-react";
 
 // ─── Project Data ────────────────────────────────────────────────────────────
 
@@ -9,7 +9,7 @@ type Project = {
   tagline: string;
   description: string;
   tech: { name: string; logo: string }[];
-  image: string | null; // Ithe tu /project-1.png asha paths vapru shakshil
+  image: string | null;
   link: string;
   github: string;
   accent: string;
@@ -18,59 +18,105 @@ type Project = {
 
 const projects: Project[] = [
   {
-    title: "Connectly",
-    tagline: "Real-time collaboration",
-    description: "A real-time collaboration platform with WebRTC video calls, shared cursors, and live document editing for distributed engineering teams.",
-    tech: [
-      { name: "Next.js", logo: "/next.svg" },
-      { name: "WebRTC", logo: "/webrtc.png" },
-      { name: "Socket.io", logo: "/socket.png" },
-      { name: "MongoDB", logo: "/MongoDB.png" },
-      { name: "Express", logo: "/ex.png" },
-    ],
-    image: null, 
-    link: "#",
-    github: "#",
-    accent: "from-cyan-400 to-blue-600",
-    placeholderGradient: "from-cyan-950 via-slate-900 to-blue-950",
-  },
-  {
     title: "AgenticAI Studio",
     tagline: "Autonomous agent orchestration",
-    description: "Drag-and-drop visual builder for autonomous LLM agent workflows with real-time execution monitoring and multi-model routing.",
+    description: "Architected a multi-agent AI coding platform (Planner, Coder, Debugger) that automates end-to-end code generation, execution, and debugging. Features real-time streaming (SSE) with <2s latency, agent memory, version control, and a hybrid execution engine within a browser-based IDE.",
     tech: [
       { name: "React", logo: "/React.png" },
-      { name: "Firebase", logo: "/Firebase.png" },
-      { name: "Framer", logo: "/framer.svg" },
-      { name: "Supabase", logo: "/icons8-supabase-48.png" },
-      { name: "PostgreSQL", logo: "/PostgresSQL.png" },
+      { name: "TypeScript", logo: "/ts.svg" },
+      { name: "Node.js", logo: "/Node.js.png" },
+      { name: "Express", logo: "/ex.png" },
+      { name: "MongoDB", logo: "/MongoDB.png" },
     ],
-    image: null,
-    link: "#",
-    github: "#",
+    image: "/IDE.png",
+    link: "https://agentic-ai-studio-chi.vercel.app/",
+    github: "https://github.com/Ambarubale6061/AgenticAI-Studio",
     accent: "from-violet-400 to-fuchsia-600",
     placeholderGradient: "from-violet-950 via-slate-900 to-fuchsia-950",
   },
   {
     title: "FutureCart",
     tagline: "AI-powered commerce",
-    description: "Next-generation e-commerce platform with personalized AI recommendations and predictive inventory analytics.",
+    description: "Built a scalable full-stack eCommerce platform supporting 50+ products with filtering, cart, wishlist, and secure checkout. Features a real-time product management system via Supabase Realtime, reducing admin update delays by 60%, with role-based architecture and chatbot integration.",
     tech: [
-      { name: "Node.js", logo: "/Node.js.png" },
-      { name: "Tailwind", logo: "/Tailwind CSS.png" },
-      { name: "Three.js", logo: "/Three.js.png" },
-      { name: "Git", logo: "/git.svg" },
+      { name: "React", logo: "/React.png" },
+      { name: "Tailwind CSS", logo: "/Tailwind CSS.png" },
       { name: "TypeScript", logo: "/ts.svg" },
+      { name: "Supabase", logo: "/icons8-supabase-48.png" },
     ],
-    image: null,
-    link: "#",
-    github: "#",
+    image: "/home.png",
+    link: "https://futurecart-e-commerce.vercel.app/",
+    github: "https://github.com/Ambarubale6061/FutureCart-Modern-eCommerce-Platform",
     accent: "from-emerald-400 to-teal-600",
     placeholderGradient: "from-emerald-950 via-slate-900 to-teal-950",
   },
+  {
+    title: "Connectly",
+    tagline: "Real-time collaboration",
+    description: "Developed a scalable social media platform supporting posts, reels, stories, and real-time interactions. Delivers low-latency (<1s) messaging, notifications, and presence via Supabase Realtime, with peer-to-peer voice and video calling via WebRTC and secure Postgres/RLS backend.",
+    tech: [
+      { name: "React", logo: "/React.png" },
+      { name: "TypeScript", logo: "/ts.svg" },
+      { name: "Supabase", logo: "/icons8-supabase-48.png" },
+      { name: "WebRTC", logo: "/webrtc.png" },
+    ],
+    image: "/hom.png",
+    link: "https://connectly-tau.vercel.app/",
+    github: "https://github.com/Ambarubale6061/Connectly",
+    accent: "from-cyan-400 to-blue-600",
+    placeholderGradient: "from-cyan-950 via-slate-900 to-blue-950",
+  },
+  {
+    title: "Task Manager App",
+    tagline: "Smart daily task organizer",
+    description: "Built an efficient task management application to organize, track, and manage daily activities with a clean and responsive user interface for improved productivity.",
+    tech: [
+      { name: "Next.js", logo: "/next.svg" },
+      { name: "React", logo: "/React.png" },
+      { name: "Tailwind CSS", logo: "/Tailwind CSS.png" },
+      { name: "Node.js", logo: "/Node.js.png" },
+    ],
+    image: "/taskapp.png",
+    link: "https://task-app-nine-lovat.vercel.app/",
+    github: "https://github.com/yourusername/task-manager-app",
+    accent: "from-blue-400 to-cyan-600",
+    placeholderGradient: "from-blue-950 via-slate-900 to-cyan-950",
+  },
+  {
+    title: "QuickCart",
+    tagline: "Modern e-commerce experience",
+    description: "Developed a modern e-commerce web application with responsive UI, product listings, cart functionality, and secure backend integration using MongoDB and Next.js.",
+    tech: [
+      { name: "Next.js", logo: "/next.svg" },
+      { name: "Node.js",  logo: "/Node.js.png" },
+      { name: "Tailwind CSS", logo: "/Tailwind CSS.png" },
+      { name: "MongoDB", logo: "/MongoDB.png" },
+    ],
+    image: "/quick.png",
+    link: "https://quickcart-ten-opal.vercel.app/",
+    github: "https://github.com/yourusername/quickcart",
+    accent: "from-emerald-400 to-green-600",
+    placeholderGradient: "from-emerald-950 via-slate-900 to-green-950",
+  },
+  {
+    title: "Weather App",
+    tagline: "Live weather insights",
+    description: "Designed a real-time weather dashboard that displays temperature, humidity, and weather forecasts for different cities with a modern and responsive UI.",
+    tech: [
+      { name: "Next.js", logo: "/next.svg" },
+      { name: "Tailwind CSS", logo: "/Tailwind CSS.png" },
+      { name: "TypeScript", logo: "/ts.svg" },
+      { name: "Vite", logo: "/Vite.png" },
+    ],
+    image: "/weather.png",
+    link: "https://weather-dashboard-six-steel.vercel.app/",
+    github: "https://github.com/yourusername/weather-app",
+    accent: "from-yellow-400 to-orange-600",
+    placeholderGradient: "from-yellow-950 via-slate-900 to-orange-950",
+  },
 ];
 
-// ─── TechIcon (Old Tooltip Logic) ───────────────────────────────────────────
+// ─── TechIcon ────────────────────────────────────────────────────────────────
 
 function TechIcon({ name, logo }: { name: string; logo: string }) {
   const [hovered, setHovered] = useState(false);
@@ -89,7 +135,9 @@ function TechIcon({ name, logo }: { name: string; logo: string }) {
         />
         <div
           className={`w-10 h-10 rounded-full bg-slate-800/90 border transition-all duration-300 flex items-center justify-center ${
-            hovered ? "border-cyan-400/80 shadow-[0_0_12px_rgba(34,211,238,0.4)]" : "border-white/15"
+            hovered
+              ? "border-cyan-400/80 shadow-[0_0_12px_rgba(34,211,238,0.4)]"
+              : "border-white/15"
           }`}
         >
           <img
@@ -106,7 +154,7 @@ function TechIcon({ name, logo }: { name: string; logo: string }) {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-md bg-slate-900 border border-white/10 text-white text-[10px] font-bold whitespace-nowrap z-20 shadow-xl"
+            className="absolute -top-9 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-md bg-slate-900 border border-white/10 text-white text-[10px] font-bold whitespace-nowrap z-20 shadow-xl"
           >
             {name}
           </motion.div>
@@ -116,69 +164,77 @@ function TechIcon({ name, logo }: { name: string; logo: string }) {
   );
 }
 
-// ─── ProjectCard ────────────────────────────────────────────────────────────
+// ─── ProjectCard ─────────────────────────────────────────────────────────────
 
 function ProjectCard({ project }: { project: Project }) {
   return (
     <div className="group relative h-full flex flex-col rounded-3xl border border-white/10 bg-slate-950/80 transition-all duration-500 hover:border-cyan-500/50 hover:shadow-[0_0_40px_rgba(6,182,212,0.15)] overflow-hidden">
-      
-      {/* Image Area - Ready for your public images */}
-      <div className="relative aspect-[16/10] overflow-hidden bg-slate-900">
-        <motion.div 
-          className="w-full h-full"
-          whileHover={{ scale: 1.05 }}
+
+      {/* Image — fixed height, full image visible */}
+     <div className="relative w-full h-64 bg-slate-900 flex items-center justify-center overflow-hidden shrink-0">
+        <motion.div
+          className="w-full h-full flex items-center justify-center"
+          whileHover={{ scale: 1.03 }}
           transition={{ duration: 0.6, ease: [0.33, 1, 0.68, 1] }}
         >
           {project.image ? (
-            <img 
-              src={project.image} 
-              alt={project.title} 
-              className="w-full h-full object-cover"
-            />
+            <img
+  src={project.image}
+  alt={project.title}
+  className="z-10 absolute top-12 translate-y-2 rounded-t-lg shadow-2xl"
+                  width={460}
+                  height={300}
+                  style={{ 
+                    objectFit: 'contain',
+                    width: '92%',
+                    height: 'auto'
+                  }}
+                />
           ) : (
             <div className={`w-full h-full bg-gradient-to-br ${project.placeholderGradient} opacity-60`} />
           )}
-          
-          {/* Decorative Grid Overlay */}
-          <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: "radial-gradient(#fff 0.5px, transparent 0.5px)", backgroundSize: "24px 24px" }} />
+          <div
+            className="absolute inset-0 opacity-10 pointer-events-none"
+            style={{
+              backgroundImage: "radial-gradient(#fff 0.5px, transparent 0.5px)",
+              backgroundSize: "24px 24px",
+            }}
+          />
         </motion.div>
-        
         <div className={`absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r ${project.accent} opacity-50`} />
       </div>
 
       {/* Content */}
-      <div className="p-7 flex flex-col flex-1">
-        <div className="mb-4">
+      <div className="p-6 flex flex-col flex-1">
+        <div className="mb-3">
           <p className={`text-[10px] font-mono tracking-widest uppercase mb-1 bg-gradient-to-r ${project.accent} bg-clip-text text-transparent font-black`}>
             {project.tagline}
           </p>
-          <h4 className="text-2xl font-bold text-white tracking-tight group-hover:text-cyan-300 transition-colors duration-300">
+          <h4 className="text-xl font-bold text-white tracking-tight group-hover:text-cyan-300 transition-colors duration-300">
             {project.title}
           </h4>
         </div>
-        
-        <p className="text-white/50 text-sm leading-relaxed mb-8 flex-1">
+
+        <p className="text-white/50 text-sm leading-relaxed mb-5 flex-1 line-clamp-3">
           {project.description}
         </p>
 
-        {/* Tech Stack - Reverted to Old Style */}
-        <div className="flex flex-wrap gap-3 mb-8">
+        <div className="flex flex-wrap gap-2.5 mb-5">
           {project.tech.map((t) => (
             <TechIcon key={t.name} name={t.name} logo={t.logo} />
           ))}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-4 mt-auto">
+        <div className="flex items-center gap-3 mt-auto">
           <a
             href={project.link}
-            className="flex-1 px-5 py-3 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all duration-300"
+            className="flex-1 px-4 py-2.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all duration-300"
           >
             View Project <ArrowUpRight className="w-3.5 h-3.5" />
           </a>
           <a
             href={project.github}
-            className="p-3 rounded-full border border-white/10 text-white hover:border-cyan-400/50 hover:text-cyan-400 transition-all duration-300"
+            className="p-2.5 rounded-full border border-white/10 text-white hover:border-cyan-400/50 hover:text-cyan-400 transition-all duration-300"
           >
             <Github className="w-4 h-4" />
           </a>
@@ -188,44 +244,56 @@ function ProjectCard({ project }: { project: Project }) {
   );
 }
 
-// ─── Main Section ────────────────────────────────────────────────────────────
+// ─── Main Section ─────────────────────────────────────────────────────────────
 
 export function Projects() {
   return (
-    <section id="projects" className="py-24 px-6 max-w-7xl mx-auto scroll-mt-24">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.7 }}
-        className="text-center mb-16"
-      >
-        <p className="text-cyan-400 font-mono text-xs tracking-[0.3em] uppercase mb-3">
-          / My Work
-        </p>
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
-          Featured{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 drop-shadow-[0_0_15px_rgba(34,211,238,0.3)]">
-            Projects
-          </span>
-        </h2>
-        <p className="text-white/55 mt-5 max-w-2xl mx-auto text-base sm:text-lg font-medium">
-          Building reliable, scalable, and user-focused digital products.
-        </p>
-      </motion.div>
+    // Section spans full viewport width for background coverage
+    <section
+      id="projects"
+      className="w-full py-24 px-6 sm:px-10 lg:px-16 scroll-mt-24"
+    >
+      {/* Inner wrapper caps the content width — cards stay compact on wide screens */}
+      <div className="max-w-7xl mx-auto">
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {projects.map((project, idx) => (
-          <motion.div
-            key={project.title}
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: idx * 0.1, duration: 0.6 }}
-          >
-            <ProjectCard project={project} />
-          </motion.div>
-        ))}
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+          className="text-center mb-14"
+        >
+          <p className="text-cyan-400 font-mono text-xs tracking-[0.3em] uppercase mb-3">
+            / My Work
+          </p>
+          <h2 className="text-3xl sm:text-5xl font-semibold mb-6 leading-tight">
+            <span className="text-white">Featured</span>{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">
+              Projects
+            </span>
+          </h2>
+          <p className="text-white/55 mt-5 max-w-2xl mx-auto text-base sm:text-lg font-medium">
+            Building reliable, scalable, and user-focused digital products.
+          </p>
+        </motion.div>
+
+        {/* Grid — constrained width keeps each card at a balanced size */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
+          {projects.map((project, idx) => (
+            <motion.div
+              key={project.title}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.08, duration: 0.6 }}
+              className="h-full"
+            >
+              <ProjectCard project={project} />
+            </motion.div>
+          ))}
+        </div>
+
       </div>
     </section>
   );
