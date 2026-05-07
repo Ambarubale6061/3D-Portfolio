@@ -17,7 +17,7 @@ export function ResumeQRModal({ open, onClose }: Props) {
     
     // Mobile var scan kelyavar direct PDF open honyasathi link
     const origin = window.location.origin;
-    setPageUrl(`${origin}/Certi.pdf`);
+    setPageUrl(`${origin}/Resume.pdf`);
 
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
@@ -115,7 +115,7 @@ export function ResumeQRModal({ open, onClose }: Props) {
               {/* ✅ DIRECT DOWNLOAD LINK BUTTON */}
               <a
                 data-hover
-                href="/Certi.pdf"
+                href="/Resume.pdf"
                 download="Ambar_Resume.pdf"
                 onClick={handleDownloadClick}
                 className="w-full px-6 py-3.5 rounded-full bg-gradient-cta text-white font-bold text-xs tracking-[0.22em] uppercase flex items-center justify-center gap-2 hover:shadow-[0_10px_40px_-10px_rgba(56,189,248,0.7)] transition-shadow no-underline"
@@ -133,7 +133,7 @@ export function ResumeQRModal({ open, onClose }: Props) {
 
               <a
                 data-hover
-                href="/Certi.pdf"
+                href="/Resume.pdf"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1.5 text-[11px] text-cyan-300 hover:text-cyan-200 transition-colors underline underline-offset-4"

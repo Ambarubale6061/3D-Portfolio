@@ -99,7 +99,7 @@ export function Navbar() {
             {/* ✅ FIXED: DIRECT DOWNLOAD (REDIRECT NAKO) */}
             <a
               data-hover
-              href="/Certi.pdf"
+              href="/Resume.pdf"
               download="Ambar_Resume.pdf" // He attribute file direct download karte
               aria-label="Download resume"
               title="Download Resume"

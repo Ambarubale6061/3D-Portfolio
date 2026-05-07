@@ -54,49 +54,58 @@ function App() {
 
         <main className="flex-1 flex flex-col w-full pb-24 md:pb-0">
 
-          {/* 1. Hero: Full-Width */}
+          {/* 1. Hero */}
           <Hero />
 
-          {/* 2. About: Full-Width */}
+          {/* 2. About */}
           <Suspense fallback={<SectionFallback />}>
             <div className="w-full">
               <About />
             </div>
           </Suspense>
 
-          {/* 3. Skills: Full-Width */}
+          {/* 3. Skills */}
           <Suspense fallback={<SectionFallback />}>
             <div className="w-full">
               <Skills />
             </div>
           </Suspense>
 
-          {/* 4. Services, Experience, Testimonials, Contact: Constrained */}
+          {/* 4. Services */}
           <div className="w-full max-w-350 mx-auto px-4 sm:px-8 md:pl-24 md:pr-8 lg:pl-32 lg:pr-16">
             <Suspense fallback={<SectionFallback />}>
               <Services />
             </Suspense>
           </div>
 
-          {/* 5. Projects: Full-Width — pulled out of constrained container */}
+          {/* 5. Projects */}
           <Suspense fallback={<SectionFallback />}>
             <div className="w-full">
               <Projects />
             </div>
           </Suspense>
 
-          {/* 6. Remaining sections: Constrained */}
-          <div className="w-full max-w-350 mx-auto px-4 sm:px-8 md:pl-24 md:pr-8 lg:pl-32 lg:pr-16">
-            <Suspense fallback={<SectionFallback />}>
+          {/* 6. Experience */}
+          <Suspense fallback={<SectionFallback />}>
+            <div className="w-full max-w-350 mx-auto px-4 sm:px-8 md:pl-24 md:pr-8 lg:pl-32 lg:pr-16">
               <Experience />
-            </Suspense>
-            <Suspense fallback={<SectionFallback />}>
+            </div>
+          </Suspense>
+
+          {/* 7. Testimonials (moved here exactly after Experience) */}
+          <Suspense fallback={<SectionFallback />}>
+            <div className="w-full">
               <Testimonials />
-            </Suspense>
+            </div>
+          </Suspense>
+
+          {/* 8. Contact */}
+          <div className="w-full max-w-350 mx-auto px-4 sm:px-8 md:pl-24 md:pr-8 lg:pl-32 lg:pr-16">
             <Suspense fallback={<SectionFallback />}>
               <Contact />
             </Suspense>
           </div>
+
         </main>
 
         <Suspense fallback={null}>

@@ -254,7 +254,7 @@ export function Hero() {
 
               <a
                 data-hover
-                href="/Certi.pdf"
+                href="/Resume.pdf"
                 download="Ambar_Resume.pdf"
                 className="
                   inline-flex items-center gap-2
