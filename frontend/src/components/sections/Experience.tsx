@@ -29,7 +29,7 @@ const experienceData = {
     { id: 4, name: "Tailwind", img: "/Tailwind CSS.png" },
     { id: 5, name: "Firebase", img: "/Firebase.png" },
     { id: 6, name: "Java", img: "/Java.png" },
-    { id: 7, name: "Spring Boot", img: "/boot.png" },
+    { id: 7, name: "Spring Boot", img: "/Spring.png" },
     { id: 8, name: "Express", img: "/ex.png" },
     { id: 9, name: "JavaScript", img: "/JavaScript.png" },
     { id: 10, name: "TypeScript", img: "/ts.svg" },
