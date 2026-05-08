@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, Send, X, Sparkles } from "lucide-react";
 
@@ -14,37 +14,51 @@ const SUGGESTIONS = [
   "What does Ambar build?",
   "Show me his stack",
   "How do I hire him?",
-];
+] as const;
 
 export function ChatBubble() {
-  const [open, setOpen] = useState(false);
-  const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Msg[]>([GREETING]);
-  const [streaming, setStreaming] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const abortRef = useRef<AbortController | null>(null);
+  const [open, setOpen]           = useState(false);
+  const [input, setInput]         = useState("");
+  const [messages, setMessages]   = useState<Msg[]>([GREETING]);
+  const [streaming, setStreaming]  = useState(false);
+  const scrollRef  = useRef<HTMLDivElement>(null);
+  const abortRef   = useRef<AbortController | null>(null);
 
+  // ── Scroll to bottom — only when the panel is open ─────────────────────────
+  // Previously this ran on every `open` change including when closing, causing
+  // a layout read on a hidden element.
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    if (!open) return;
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [messages, streaming, open]);
 
-  async function send(text: string) {
+  // ── Send ────────────────────────────────────────────────────────────────────
+  // useCallback so stable reference — avoids re-binding suggestion buttons
+  const send = useCallback(async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || streaming) return;
-    const next: Msg[] = [...messages, { role: "user", content: trimmed }, { role: "assistant", content: "" }];
+
+    // Cancel any in-flight stream
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    const next: Msg[] = [
+      ...messages,
+      { role: "user",      content: trimmed },
+      { role: "assistant", content: ""      },
+    ];
     setMessages(next);
     setInput("");
     setStreaming(true);
 
-    const controller = new AbortController();
-    abortRef.current = controller;
-
     try {
       const API = import.meta.env.VITE_API_URL;
       const res = await fetch(`${API}/api/chat`, {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body:    JSON.stringify({
           messages: next.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
         }),
         signal: controller.signal,
@@ -52,10 +66,10 @@ export function ChatBubble() {
 
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
 
-      const reader = res.body.getReader();
+      const reader  = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
-      let acc = "";
+      let acc    = "";
 
       while (true) {
         const { value, done } = await reader.read();
@@ -72,7 +86,7 @@ export function ChatBubble() {
             if (evt.content) {
               acc += evt.content;
               setMessages((prev) => {
-                const copy = prev.slice();
+                const copy = [...prev];
                 copy[copy.length - 1] = { role: "assistant", content: acc };
                 return copy;
               });
@@ -83,9 +97,10 @@ export function ChatBubble() {
           }
         }
       }
+
       if (!acc) {
         setMessages((prev) => {
-          const copy = prev.slice();
+          const copy = [...prev];
           copy[copy.length - 1] = {
             role: "assistant",
             content: "Hmm, I went quiet for a sec. Try again?",
@@ -96,7 +111,7 @@ export function ChatBubble() {
     } catch (err: any) {
       if (err?.name === "AbortError") return;
       setMessages((prev) => {
-        const copy = prev.slice();
+        const copy = [...prev];
         copy[copy.length - 1] = {
           role: "assistant",
           content: "Connection hiccup — please try again in a moment.",
@@ -107,10 +122,18 @@ export function ChatBubble() {
       setStreaming(false);
       abortRef.current = null;
     }
-  }
+  // messages is intentionally captured at call time via closure; streaming guards re-entry
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [streaming, messages]);
+
+  // ── Cleanup abort on unmount ────────────────────────────────────────────────
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
 
   return (
     <>
+      {/* Floating button */}
       <motion.button
         data-hover
         onClick={() => setOpen((v) => !v)}
@@ -123,19 +146,19 @@ export function ChatBubble() {
         <span className="absolute inset-0 rounded-full bg-cyan-400/40 blur-xl group-hover:bg-cyan-400/60 transition-colors" />
         <span className="absolute inset-0 rounded-full animate-ping bg-cyan-400/20" />
         <span className="relative flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-cyan-400 via-cyan-500 to-violet-500 shadow-[0_8px_32px_rgba(34,211,238,0.45)] border border-white/20">
-          {open ? (
-            <X className="w-6 h-6 text-white" />
-          ) : (
-            <MessageCircle className="w-6 h-6 text-white" />
-          )}
+          {open
+            ? <X className="w-6 h-6 text-white" />
+            : <MessageCircle className="w-6 h-6 text-white" />
+          }
         </span>
       </motion.button>
 
+      {/* Chat panel */}
       <AnimatePresence>
         {open && (
           <motion.div
             initial={{ opacity: 0, y: 24, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
+            animate={{ opacity: 1, y: 0,  scale: 1    }}
             exit={{ opacity: 0, y: 24, scale: 0.95 }}
             transition={{ type: "spring", stiffness: 240, damping: 24 }}
             className="fixed bottom-24 right-6 z-[9980] w-[min(92vw,380px)] h-[min(70vh,540px)] flex flex-col rounded-3xl overflow-hidden border border-white/10 bg-slate-950/85 backdrop-blur-2xl shadow-[0_24px_80px_rgba(8,11,24,0.7)]"
@@ -143,6 +166,7 @@ export function ChatBubble() {
             <div className="absolute -top-20 -right-20 w-48 h-48 rounded-full bg-cyan-500/20 blur-3xl pointer-events-none" />
             <div className="absolute -bottom-24 -left-20 w-56 h-56 rounded-full bg-violet-500/20 blur-3xl pointer-events-none" />
 
+            {/* Header */}
             <div className="relative flex items-center gap-3 px-4 py-3 border-b border-white/10">
               <div className="relative w-9 h-9 rounded-full bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-white" />
@@ -154,7 +178,11 @@ export function ChatBubble() {
               </div>
             </div>
 
-            <div ref={scrollRef} className="relative flex-1 overflow-y-auto px-4 py-4 space-y-3">
+            {/* Messages */}
+            <div
+              ref={scrollRef}
+              className="relative flex-1 overflow-y-auto px-4 py-4 space-y-3"
+            >
               {messages.map((m, i) => (
                 <div
                   key={i}
@@ -194,11 +222,9 @@ export function ChatBubble() {
               )}
             </div>
 
+            {/* Input */}
             <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                send(input);
-              }}
+              onSubmit={(e) => { e.preventDefault(); send(input); }}
               className="relative flex items-center gap-2 px-3 py-3 border-t border-white/10 bg-slate-950/60"
             >
               <input
@@ -225,6 +251,7 @@ export function ChatBubble() {
   );
 }
 
+// ── Typing indicator dot ──────────────────────────────────────────────────────
 function Dot({ delay }: { delay: number }) {
   return (
     <span

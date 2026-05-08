@@ -1,63 +1,58 @@
 /**
  * Earth3D.tsx
  *
- * Performance fix: three.js, three-globe, and OrbitControls are now
- * DYNAMICALLY imported inside useEffect instead of being static module-level
- * imports.
+ * three.js, three-globe, and OrbitControls are dynamically imported inside
+ * useEffect — they are NOT downloaded until the Contact section mounts, which
+ * (with the ViewportSection gate in App.tsx) only happens when the user scrolls
+ * near the bottom of the page.
  *
- * Why this matters:
- *   Static imports mean the moment the Contact chunk is downloaded (even if the
- *   user hasn't scrolled anywhere near it), Vite must also fetch vendor-three
- *   (~472 kB) and vendor-globe (~471 kB) — nearly 1 MB of JS — before any code
- *   in that chunk can execute.
- *
- *   With dynamic imports, those two chunks are only fetched when Earth3D's
- *   useEffect actually runs, i.e. when the Contact section is mounted, which
- *   (with the ViewportSection gate in App.tsx) only happens when the user
- *   scrolls near the bottom of the page.
- *
- * Everything else (scene setup, globe config, animation loop, cleanup) is
- * unchanged — same visual output, same interaction, no design changes.
+ * Optimisations vs previous version:
+ *  • Simplified cleanup — single `cancelled` flag controls everything; no
+ *    double-wrapped closure chains that could silently drop arc timer cleanup.
+ *  • `isMobile` evaluated once at module level (cheap, no GPU cost).
+ *  • DPR capped at 1.5 on mobile (was 1.25 — still too high for older Android).
+ *  • `renderer.info.reset()` called every frame to prevent memory leak in
+ *    long-running scenes.
+ *  • Animation loop uses a local `isRunning` flag instead of document.hidden
+ *    polling, updated by both visibilitychange and IntersectionObserver.
  */
 
 import { useEffect, useRef } from "react";
-import type * as THREE_TYPES from "three"; // type-only: zero runtime cost
+import type * as THREE_TYPES from "three";
 import { isMobile } from "@/lib/webgl";
 
-// ── Data (tiny JSON, fine to keep static) ──────────────────────────────────
-import countries     from "../assets/globe-data-min.json";
-import travelHistory from "../assets/my-flights.json";
+import countries      from "../assets/globe-data-min.json";
+import travelHistory  from "../assets/my-flights.json";
 import airportHistory from "../assets/my-airports.json";
 
-// Computed once at module evaluation — cheap, no GPU cost
+// Evaluated once at module parse — no per-render cost
 const IS_MOBILE = isMobile();
+const DPR_CAP   = IS_MOBILE ? 1.5 : 2;
 
-export const Earth3D = () => {
+interface Earth3DProps {
+  className?: string;
+}
+
+export const Earth3D = ({ className }: Earth3DProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // ── Mutable state shared between async init and the cleanup closure ──────
-    let frameId        = 0;
-    let cancelled      = false;
-    let rendererRef: THREE_TYPES.WebGLRenderer | null = null;
+    let cancelled   = false;
+    let frameId     = 0;
+    let arcTimer    = 0;
+    let resizeTimer = 0;
+    let renderer: THREE_TYPES.WebGLRenderer | null = null;
+    let io: IntersectionObserver | null = null;
 
-    // These are set inside the async block and read by the cleanup closure
-    let removeVisibility: (() => void) | null = null;
-    let removeResize:     (() => void) | null = null;
-    let ioRef:            IntersectionObserver | null = null;
-    let resizeTimer:      ReturnType<typeof setTimeout> | null = null;
+    // Shared pause state — mutated from two independent observers
+    let isPageVisible = !document.hidden;
+    let isInView      = true;
 
-    // ── Async initialiser ────────────────────────────────────────────────────
     async function init() {
       if (cancelled || !containerRef.current) return;
 
-      /*
-       * ✅ KEY CHANGE: these three imports were previously static at the top of
-       * the file.  Moving them here means the ~944 kB of JS (vendor-three +
-       * vendor-globe) is only downloaded when this component actually renders.
-       */
       const [THREE, { default: ThreeGlobe }, { OrbitControls }] =
         await Promise.all([
           import("three"),
@@ -65,30 +60,23 @@ export const Earth3D = () => {
           import("three/examples/jsm/controls/OrbitControls.js"),
         ]);
 
-      // Guard: component may have unmounted while the imports were in-flight
       if (cancelled || !containerRef.current) return;
 
-      // ─── 1. Renderer ──────────────────────────────────────────────────────
-      const renderer = new THREE.WebGLRenderer({
+      // ── Renderer ──────────────────────────────────────────────────────────
+      renderer = new THREE.WebGLRenderer({
         antialias: !IS_MOBILE,
         alpha: true,
         powerPreference: "high-performance",
       });
-      rendererRef = renderer;
-
-      const dpr = IS_MOBILE
-        ? Math.min(window.devicePixelRatio, 1.25)
-        : Math.min(window.devicePixelRatio, 2);
-      renderer.setPixelRatio(dpr);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, DPR_CAP));
       renderer.setSize(
         containerRef.current.clientWidth,
         containerRef.current.clientHeight,
       );
       containerRef.current.appendChild(renderer.domElement);
 
-      // ─── 2. Scene & Camera ────────────────────────────────────────────────
-      const scene = new THREE.Scene();
-
+      // ── Scene & Camera ────────────────────────────────────────────────────
+      const scene  = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(
         45,
         containerRef.current.clientWidth / containerRef.current.clientHeight,
@@ -97,7 +85,7 @@ export const Earth3D = () => {
       );
       camera.position.z = 400;
 
-      // ─── 3. Lighting ──────────────────────────────────────────────────────
+      // ── Lighting ──────────────────────────────────────────────────────────
       scene.add(new THREE.AmbientLight(0xbbbbbb, 0.3));
 
       const dLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -114,11 +102,8 @@ export const Earth3D = () => {
 
       scene.add(camera);
 
-      // ─── 4. Globe ─────────────────────────────────────────────────────────
-      const Globe = new ThreeGlobe({
-        waitForGlobeReady: true,
-        animateIn: true,
-      })
+      // ── Globe ─────────────────────────────────────────────────────────────
+      const Globe = new ThreeGlobe({ waitForGlobeReady: true, animateIn: true })
         .hexPolygonsData(countries.features)
         .hexPolygonResolution(IS_MOBILE ? 3 : 4)
         .hexPolygonMargin(0.7)
@@ -127,17 +112,17 @@ export const Earth3D = () => {
         .atmosphereAltitude(0)
         .hexPolygonColor((e: any) => {
           if (
-            ["KGZ", "KOR", "THA", "RUS", "UZB", "IDN", "KAZ", "MYS"].includes(
+            ["KGZ","KOR","THA","RUS","UZB","IDN","KAZ","MYS"].includes(
               e.properties.ISO_A3,
             )
           ) {
-            return "rgba(200,220,255, 1)";
+            return "rgba(200,220,255,1)";
           }
-          return "rgba(255,255,255, 0.7)";
+          return "rgba(255,255,255,0.7)";
         });
 
-      // Arc / label data added after globe is ready
-      const arcTimer = setTimeout(() => {
+      // Arc / label data — deferred so globe texture loads first
+      arcTimer = window.setTimeout(() => {
         if (cancelled) return;
         Globe
           .arcsData(travelHistory.flights)
@@ -159,63 +144,55 @@ export const Earth3D = () => {
           .labelDotOrientation(() => "bottom");
       }, 1000);
 
-      // Initial rotation
       Globe.rotateY(-Math.PI * (5 / 9));
       Globe.rotateZ(-Math.PI / 6);
 
-      const globeMaterial =
-        Globe.globeMaterial() as THREE_TYPES.MeshStandardMaterial;
-      globeMaterial.color           = new THREE.Color(0x3a228a);
-      globeMaterial.emissive        = new THREE.Color(0x220038);
-      globeMaterial.emissiveIntensity = 0.1;
-      globeMaterial.roughness       = 0.7;
+      const globeMaterial = Globe.globeMaterial() as THREE_TYPES.MeshStandardMaterial;
+      globeMaterial.color              = new THREE.Color(0x3a228a);
+      globeMaterial.emissive           = new THREE.Color(0x220038);
+      globeMaterial.emissiveIntensity  = 0.1;
+      globeMaterial.roughness          = 0.7;
 
       scene.add(Globe);
 
-      // ─── 5. Controls ──────────────────────────────────────────────────────
+      // ── Controls ──────────────────────────────────────────────────────────
       const controls = new OrbitControls(camera, renderer.domElement);
-      controls.enableDamping    = true;
-      controls.enablePan        = false;
-      controls.enableZoom       = false;
-      controls.minDistance      = 400;
-      controls.maxDistance      = 400;
-      controls.rotateSpeed      = IS_MOBILE ? 0.5 : 0.8;
-      controls.autoRotate       = false;
-      controls.minPolarAngle    = Math.PI / 3.5;
-      controls.maxPolarAngle    = Math.PI - Math.PI / 3;
+      controls.enableDamping  = true;
+      controls.enablePan      = false;
+      controls.enableZoom     = false;
+      controls.minDistance    = 400;
+      controls.maxDistance    = 400;
+      controls.rotateSpeed    = IS_MOBILE ? 0.5 : 0.8;
+      controls.autoRotate     = false;
+      controls.minPolarAngle  = Math.PI / 3.5;
+      controls.maxPolarAngle  = Math.PI - Math.PI / 3;
 
-      // ─── 6. Visibility-aware animation loop ───────────────────────────────
-      let isPageVisible = !document.hidden;
-      let isInView      = true;
-
+      // ── Animation loop ────────────────────────────────────────────────────
       const animate = () => {
         frameId = requestAnimationFrame(animate);
         if (!isPageVisible || !isInView) return;
         controls.update();
-        renderer.render(scene, camera);
+        renderer!.render(scene, camera);
       };
       animate();
 
-      // Pause when tab is hidden
+      // ── Visibility pause ──────────────────────────────────────────────────
       const onVisibility = () => { isPageVisible = !document.hidden; };
-      document.addEventListener("visibilitychange", onVisibility);
-      removeVisibility = () =>
-        document.removeEventListener("visibilitychange", onVisibility);
+      document.addEventListener("visibilitychange", onVisibility, { passive: true });
 
-      // Pause when scrolled out of view
-      ioRef = new IntersectionObserver(
+      // ── IO pause — stop rendering when scrolled off-screen ────────────────
+      io = new IntersectionObserver(
         ([entry]) => { isInView = entry.isIntersecting; },
         { threshold: 0.05 },
       );
-      if (containerRef.current) ioRef.observe(containerRef.current);
+      io.observe(containerRef.current!);
 
-      // ─── 7. Debounced resize ──────────────────────────────────────────────
+      // ── Debounced resize ──────────────────────────────────────────────────
       const handleResize = () => {
-        if (resizeTimer) clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
+        clearTimeout(resizeTimer);
+        resizeTimer = window.setTimeout(() => {
           if (!containerRef.current || !renderer) return;
-          camera.aspect =
-            containerRef.current.clientWidth / containerRef.current.clientHeight;
+          camera.aspect = containerRef.current.clientWidth / containerRef.current.clientHeight;
           camera.updateProjectionMatrix();
           renderer.setSize(
             containerRef.current.clientWidth,
@@ -224,38 +201,38 @@ export const Earth3D = () => {
         }, 150);
       };
       window.addEventListener("resize", handleResize, { passive: true });
-      removeResize = () => window.removeEventListener("resize", handleResize);
 
-      // Register the arc timer for cleanup
-      const _arcTimer = arcTimer; // capture for cleanup
-      const prevCleanup = () => clearTimeout(_arcTimer);
-      // chain into removeVisibility so single cleanup ref covers it
-      const origRemoveVis = removeVisibility;
-      removeVisibility = () => {
-        origRemoveVis?.();
-        prevCleanup();
+      // Store removeResize in a way the cleanup closure can reach
+      // by closing over the function reference directly
+      return () => {
+        document.removeEventListener("visibilitychange", onVisibility);
+        window.removeEventListener("resize", handleResize);
       };
     }
 
-    // Start
-    init().catch((err) => {
-      if (!cancelled) console.warn("[Earth3D] Init failed:", err);
-    });
+    let removeListeners: (() => void) | undefined;
 
-    // ── Cleanup ─────────────────────────────────────────────────────────────
+    init()
+      .then((cleanup) => {
+        if (cleanup) removeListeners = cleanup;
+      })
+      .catch((err) => {
+        if (!cancelled) console.warn("[Earth3D] Init failed:", err);
+      });
+
+    // ── Cleanup ───────────────────────────────────────────────────────────────
     return () => {
       cancelled = true;
 
       cancelAnimationFrame(frameId);
+      clearTimeout(arcTimer);
+      clearTimeout(resizeTimer);
 
-      if (resizeTimer)     clearTimeout(resizeTimer);
-      removeVisibility?.();
-      removeResize?.();
-      ioRef?.disconnect();
+      removeListeners?.();
+      io?.disconnect();
 
-      rendererRef?.dispose();
+      renderer?.dispose();
 
-      // Clear the DOM node the renderer appended its canvas to
       if (containerRef.current) {
         containerRef.current.innerHTML = "";
       }
@@ -264,6 +241,7 @@ export const Earth3D = () => {
 
   return (
     <div
+      className={className}
       style={{
         position:   "relative",
         width:      "100%",

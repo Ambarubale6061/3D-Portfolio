@@ -1,41 +1,39 @@
 import { motion, useMotionValue, useSpring } from "framer-motion";
 import { ArrowRight, ChevronDown, Download } from "lucide-react";
 import { TypeAnimation } from "react-type-animation";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef } from "react";
 import { SplineRobot } from "@/components/SplineRobot";
 
-/* ─── Shared entrance animation factory ───────────────────────────────────── */
+/* ─── Entrance animation factory ───────────────────────────────────────────── */
 const fadeUp = (delay: number) => ({
   initial:    { opacity: 0, y: 18 },
   animate:    { opacity: 1, y: 0  },
   transition: { duration: 0.55, ease: "easeOut" as const, delay },
 });
 
-const SPLINE_URL =
-  "https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode";
+const SPLINE_URL = "https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode";
 
-/* ─── Max parallax shift (px) for the whole robot container ──────────────── */
 const SHIFT_DESKTOP = 12;
 const SHIFT_MOBILE  = 5;
 
-export function Hero() {
-  const [splineReady, setSplineReady] = useState(false);
-
-  /* ═══════════════════════════════════════════════════════════════════════════
-     CONTAINER PARALLAX  (separate from the head cursor-follow in SplineRobot)
-     ─ Gently floats the whole robot container with the cursor
-     ─ SplineRobot handles the internal head/body rotation independently
-  ═══════════════════════════════════════════════════════════════════════════ */
+// Hero is one of the most expensive components — memo prevents parent-triggered
+// re-renders (there are none currently, but this is defensive).
+export const Hero = memo(function Hero() {
+  // ── Container parallax ───────────────────────────────────────────────────
+  // Motion values are created once (stable across renders).
   const rawX    = useMotionValue(0);
   const rawY    = useMotionValue(0);
   const springX = useSpring(rawX, { stiffness: 38, damping: 20, mass: 1.1 });
   const springY = useSpring(rawY, { stiffness: 38, damping: 20, mass: 1.1 });
 
+  // Cache mobile check — same pattern as SplineRobot to avoid per-event DOM reads
+  const isMobileRef = useRef(false);
+
   useEffect(() => {
-    const isMobile = () => window.innerWidth < 768;
+    isMobileRef.current = window.innerWidth < 768;
 
     const onMouseMove = (e: MouseEvent) => {
-      if (isMobile()) return;
+      if (isMobileRef.current) return;
       const nx = (e.clientX / window.innerWidth  - 0.5) * 2;
       const ny = (e.clientY / window.innerHeight - 0.5) * 2;
       rawX.set(nx * SHIFT_DESKTOP);
@@ -51,6 +49,7 @@ export function Hero() {
       rawY.set(ny * SHIFT_MOBILE);
     };
 
+    // passive: true — no preventDefault calls, so browser can scroll freely
     window.addEventListener("mousemove", onMouseMove, { passive: true });
     window.addEventListener("touchmove", onTouchMove, { passive: true });
 
@@ -58,15 +57,11 @@ export function Hero() {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("touchmove", onTouchMove);
     };
-  }, [rawX, rawY]);
+  // rawX/rawY are motion values — stable references, never change identity
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
-    /*
-     * Section layout strategy
-     * ────────────────────────
-     * Mobile  (< md): flex-col — Spline block on top, text flows below
-     * Desktop (≥ md): block    — Spline absolute full-bleed, text absolute left
-     */
     <section
       id="hero"
       className="
@@ -76,20 +71,7 @@ export function Hero() {
       style={{ background: "hsl(222 47% 5%)" }}
     >
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          LAYER 0 — SPLINE ROBOT
-
-          ✅ Uses <SplineRobot> which:
-            • Loads via dynamic import + requestIdleCallback (no jank)
-            • Handles its own loading spinner
-            • Rotates head/body to follow the cursor internally via RAF
-
-          Mobile  : relative · h-[60vh] · full-width
-          Desktop : absolute · inset-0 · full-bleed
-
-          The motion.div adds a gentle 12px container parallax on top of
-          SplineRobot's internal head-rotation — two independent effects.
-      ═══════════════════════════════════════════════════════════════════ */}
+      {/* ═══ LAYER 0 — SPLINE ROBOT ══════════════════════════════════════════ */}
       <motion.div
         aria-hidden
         className="
@@ -105,13 +87,10 @@ export function Hero() {
         <SplineRobot
           url={SPLINE_URL}
           height="100%"
-          onLoad={() => setSplineReady(true)}
         />
       </motion.div>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          LAYER 1a — MOBILE GRADIENT BRIDGE  (hidden on desktop)
-      ═══════════════════════════════════════════════════════════════════ */}
+      {/* ═══ LAYER 1a — MOBILE GRADIENT BRIDGE ══════════════════════════════ */}
       <div
         aria-hidden
         className="md:hidden relative z-[1] shrink-0 pointer-events-none"
@@ -122,9 +101,7 @@ export function Hero() {
         }}
       />
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          LAYER 1b — DESKTOP OVERLAY  (hidden on mobile)
-      ═══════════════════════════════════════════════════════════════════ */}
+      {/* ═══ LAYER 1b — DESKTOP OVERLAY ═════════════════════════════════════ */}
       <div
         aria-hidden
         className="hidden md:block absolute inset-0 z-[1] pointer-events-none"
@@ -147,9 +124,7 @@ export function Hero() {
         }}
       />
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          LAYER 2 — CONTENT
-      ═══════════════════════════════════════════════════════════════════ */}
+      {/* ═══ LAYER 2 — CONTENT ══════════════════════════════════════════════ */}
       <div
         className="
           relative z-10
@@ -168,18 +143,18 @@ export function Hero() {
         >
           <div className="max-w-[460px] flex flex-col gap-5">
 
-            {/* ── Greeting pill ── */}
+            {/* Greeting */}
             <motion.div {...fadeUp(0.05)}>
-  <span className="text-white/65">Hi, I'm </span>
-  <span
-    className="text-cyan-400"
-    style={{ textShadow: "0 0 14px rgba(34,211,238,0.55)" }}
-  >
-    Ambar
-  </span>
-</motion.div>
+              <span className="text-white/65">Hi, I'm </span>
+              <span
+                className="text-cyan-400"
+                style={{ textShadow: "0 0 14px rgba(34,211,238,0.55)" }}
+              >
+                Ambar
+              </span>
+            </motion.div>
 
-            {/* ── Animated heading ── */}
+            {/* Animated heading */}
             <motion.h1
               {...fadeUp(0.15)}
               className="font-bold text-white leading-[1.08] tracking-[-0.01em]"
@@ -205,7 +180,7 @@ export function Hero() {
               </span>
             </motion.h1>
 
-            {/* ── Sub-headline ── */}
+            {/* Sub-headline */}
             <motion.p
               {...fadeUp(0.25)}
               className="text-sm sm:text-[15px] font-medium text-white/70 leading-snug"
@@ -219,7 +194,7 @@ export function Hero() {
               </span>
             </motion.p>
 
-            {/* ── Body copy ── */}
+            {/* Body copy */}
             <motion.p
               {...fadeUp(0.32)}
               className="text-[13px] text-white/45 leading-relaxed max-w-[390px]"
@@ -228,7 +203,7 @@ export function Hero() {
               and AI-powered experiences with modern technologies.
             </motion.p>
 
-            {/* ── CTAs ── */}
+            {/* CTAs */}
             <motion.div
               {...fadeUp(0.40)}
               className="flex flex-wrap items-center gap-3 pt-1"
@@ -269,13 +244,12 @@ export function Hero() {
                 Resume
               </a>
             </motion.div>
+
           </div>
         </div>
       </div>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          LAYER 3 — SCROLL INDICATOR
-      ═══════════════════════════════════════════════════════════════════ */}
+      {/* ═══ LAYER 3 — SCROLL INDICATOR ═════════════════════════════════════ */}
       <motion.a
         href="#about"
         data-hover
@@ -295,12 +269,10 @@ export function Hero() {
             className="w-[3px] h-[6px] rounded-full bg-cyan-400"
           />
         </span>
-        <span className="text-[8px] font-semibold tracking-[0.3em] uppercase">
-          Scroll
-        </span>
+        <span className="text-[8px] font-semibold tracking-[0.3em] uppercase">Scroll</span>
         <ChevronDown className="w-3 h-3" />
       </motion.a>
 
     </section>
   );
-}
+});

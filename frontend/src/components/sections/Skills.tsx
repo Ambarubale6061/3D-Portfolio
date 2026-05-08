@@ -7,9 +7,19 @@ import {
   Database as DbIcon, Zap, Braces, Boxes, Code2,
   Cloud, ShieldCheck, Workflow, Layout, Globe,
   Terminal, Share2, Binary, HardDrive, Key, GitBranch,
-  Brain, Bot, MessageSquare, Wand2, Github, Container, Figma
+  Brain, Bot, MessageSquare, Wand2, Github, Container, Figma,
 } from "lucide-react";
 
+// ─── Wrapper stubs ────────────────────────────────────────────────────────────
+// Defined BEFORE skillData so they exist when the object is evaluated.
+// Previously these were at the bottom of the file — a runtime ReferenceError
+// when JS tries to build the skillData object before the stubs are hoisted.
+function Monitor(props: React.ComponentProps<typeof Layout>) { return <Layout {...props} />; }
+function Search(props: React.ComponentProps<typeof Globe>)   { return <Globe {...props} />; }
+function Database(props: React.ComponentProps<typeof DbIcon>){ return <DbIcon {...props} />; }
+function Link(props: React.ComponentProps<typeof Workflow>)  { return <Workflow {...props} />; }
+
+// ─── Skill data ───────────────────────────────────────────────────────────────
 const skillData = {
   interface: [
     { name: "React",      Icon: Atom,      color: "#22d3ee" },
@@ -48,47 +58,63 @@ const skillData = {
     { name: "Vault",      Icon: Key,       color: "#ffecb3" },
   ],
   workflow: [
-    { name: "Docker",    Icon: Boxes,       color: "#2496ed" },
-    { name: "AWS",       Icon: Cloud,       color: "#ff9900" },
-    { name: "Git",       Icon: Github,      color: "#ffffff" },
-    { name: "Vercel",    Icon: Zap,         color: "#ffffff" },
-    { name: "Actions",   Icon: Workflow,    color: "#2088ff" },
-    { name: "Linux",     Icon: Terminal,    color: "#fcc624" },
+    { name: "Docker",    Icon: Boxes,         color: "#2496ed" },
+    { name: "AWS",       Icon: Cloud,         color: "#ff9900" },
+    { name: "Git",       Icon: Github,        color: "#ffffff" },
+    { name: "Vercel",    Icon: Zap,           color: "#ffffff" },
+    { name: "Actions",   Icon: Workflow,      color: "#2088ff" },
+    { name: "Linux",     Icon: Terminal,      color: "#fcc624" },
     { name: "Postman",   Icon: MessageSquare, color: "#ff6c37" },
-    { name: "K8s",       Icon: Container,   color: "#326ce5" },
-    { name: "Security",  Icon: ShieldCheck, color: "#10b981" },
-    { name: "Nginx",     Icon: Server,      color: "#009639" },
-  ]
-};
+    { name: "K8s",       Icon: Container,     color: "#326ce5" },
+    { name: "Security",  Icon: ShieldCheck,   color: "#10b981" },
+    { name: "Nginx",     Icon: Server,        color: "#009639" },
+  ],
+} as const;
 
-// Wrapper stubs — keep them outside the component so they're stable references
-function Monitor(props: any) { return <Layout {...props} />; }
-function Search(props: any)  { return <Globe {...props} />; }
-function Database(props: any){ return <DbIcon {...props} />; }
-function Link(props: any)    { return <Workflow {...props} />; }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SkillCard — animation runs entirely in a RAF loop writing to the DOM.
-// React is never re-rendered from this animation.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── SkillCard ────────────────────────────────────────────────────────────────
+// The RAF loop writes directly to DOM — React never re-renders from animation.
+// The loop pauses automatically when the card scrolls out of view (IO gate)
+// or the tab is hidden (visibilitychange), saving ~60 rAF calls/s of wasted work.
 const SkillCard = ({
   skills,
   title,
   gradient,
 }: {
-  skills: { name: string; Icon: any; color: string }[];
+  skills: readonly { name: string; Icon: React.ComponentType<any>; color: string }[];
   title: string;
   gradient: string;
 }) => {
-  // One ref per skill slot — avoids allocating new arrays on re-renders
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const rafRef   = useRef<number>(0);
   const rotRef   = useRef(0);
+  const cardRef  = useRef<HTMLDivElement>(null);
+  // Shared pause flags — mutated from IO + visibilitychange callbacks
+  const pausedRef = useRef(false);
 
   useEffect(() => {
     const count = skills.length;
 
+    // ── Visibility pause ────────────────────────────────────────────────────
+    const onVisibility = () => { pausedRef.current = document.hidden; };
+    document.addEventListener("visibilitychange", onVisibility, { passive: true });
+
+    // ── IO pause — stop animating when card is off-screen ──────────────────
+    let io: IntersectionObserver | null = null;
+    if (cardRef.current) {
+      io = new IntersectionObserver(
+        ([entry]) => { pausedRef.current = !entry.isIntersecting; },
+        { threshold: 0.05 },
+      );
+      io.observe(cardRef.current);
+    }
+
+    // ── RAF loop ────────────────────────────────────────────────────────────
     const tick = () => {
+      rafRef.current = requestAnimationFrame(tick);
+
+      // Skip all DOM writes when not visible
+      if (pausedRef.current) return;
+
       rotRef.current += 0.6;
       const rotation = rotRef.current;
 
@@ -96,8 +122,8 @@ const SkillCard = ({
         const el = itemRefs.current[i];
         if (!el) continue;
 
-        const angle = (i / count) * 360 + rotation;
-        const rad   = (angle * Math.PI) / 180;
+        const angle      = (i / count) * 360 + rotation;
+        const rad        = (angle * Math.PI) / 180;
         const normalized = ((angle % 360) + 360) % 360;
         const isActive   = normalized > 80 && normalized < 100;
 
@@ -106,7 +132,6 @@ const SkillCard = ({
         const scale = 0.6 + (y + 45) / 90 * 0.5;
         const alpha = Math.min(1, (y + 45) / 90 + 0.3);
 
-        // Write directly to DOM — zero React involvement
         el.style.transform = `translate(${x}px,${y + 20}px) scale(${scale})`;
         el.style.zIndex    = String(Math.round(y + 100));
         el.style.opacity   = String(alpha);
@@ -115,32 +140,32 @@ const SkillCard = ({
         const labelEl = el.querySelector<HTMLElement>(".sk-label");
 
         if (iconEl) {
-          iconEl.style.borderColor = isActive
-            ? skills[i].color
-            : "rgba(255,255,255,0.05)";
-          iconEl.style.boxShadow = isActive
-            ? `0 0 20px ${skills[i].color}30`
-            : "none";
+          iconEl.style.borderColor = isActive ? skills[i].color : "rgba(255,255,255,0.05)";
+          iconEl.style.boxShadow   = isActive ? `0 0 20px ${skills[i].color}30` : "none";
         }
         if (labelEl) {
           labelEl.style.opacity = isActive ? "1" : "0";
         }
       }
-
-      rafRef.current = requestAnimationFrame(tick);
     };
 
     rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
-    // skills is stable (constant array), so this dep is intentional
+
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      document.removeEventListener("visibilitychange", onVisibility);
+      io?.disconnect();
+    };
+    // skills is a stable const array reference — intentionally omitted
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="group relative h-[400px] w-full bg-transparent border border-white/5 rounded-[2.5rem] overflow-hidden backdrop-blur-sm transition-all duration-500 hover:border-white/10">
-      {/* Accent glow — purely decorative, no JS */}
-      <div
-        className={`absolute -top-20 -left-20 w-64 h-64 blur-[100px] opacity-5 rounded-full ${gradient}`}
-      />
+    <div
+      ref={cardRef}
+      className="group relative h-[400px] w-full bg-transparent border border-white/5 rounded-[2.5rem] overflow-hidden backdrop-blur-sm transition-all duration-500 hover:border-white/10"
+    >
+      {/* Accent glow — purely decorative */}
+      <div className={`absolute -top-20 -left-20 w-64 h-64 blur-[100px] opacity-5 rounded-full ${gradient}`} />
 
       {/* Section title */}
       <div className="relative z-20 p-8 text-center">
@@ -149,7 +174,7 @@ const SkillCard = ({
         </h3>
       </div>
 
-      {/* Orbit stage — items are positioned absolutely by the RAF loop */}
+      {/* Orbit stage */}
       <div className="relative w-full h-full flex justify-center items-center -mt-16">
         {skills.map((skill, index) => (
           <div
@@ -158,7 +183,6 @@ const SkillCard = ({
             className="absolute flex flex-col items-center"
             style={{ willChange: "transform, opacity" }}
           >
-            {/* Icon ring */}
             <div
               className="sk-icon p-3 rounded-full border bg-white/5"
               style={{
@@ -168,8 +192,6 @@ const SkillCard = ({
             >
               <skill.Icon size={28} style={{ color: skill.color }} strokeWidth={1.5} />
             </div>
-
-            {/* Label — shown when the item swings to the front */}
             <div
               className="sk-label absolute top-full whitespace-nowrap pt-3 pointer-events-none"
               style={{ opacity: 0, transition: "opacity 100ms" }}
@@ -188,6 +210,7 @@ const SkillCard = ({
   );
 };
 
+// ─── Section ──────────────────────────────────────────────────────────────────
 export function Skills() {
   return (
     <section
@@ -239,6 +262,7 @@ export function Skills() {
             gradient="bg-blue-600"
           />
         </div>
+
       </div>
     </section>
   );

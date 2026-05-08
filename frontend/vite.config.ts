@@ -22,6 +22,8 @@ export default defineConfig({
 
   optimizeDeps: {
     include: ["three", "three-globe", "@splinetool/runtime"],
+    // Exclude heavy R3F ecosystem from pre-bundling — they're only lazy-loaded
+    exclude: ["@react-three/fiber", "@react-three/drei", "@react-three/postprocessing"],
   },
 
   build: {
@@ -29,83 +31,92 @@ export default defineConfig({
     emptyOutDir: true,
     chunkSizeWarningLimit: 1400,
 
-    /*
-     * ✅ Skip generating the modulepreload polyfill (~1.5 kB).
-     * Modern browsers (Chrome 66+, Firefox 115+, Safari 17+) all support
-     * <link rel="modulepreload"> natively.  Removing the polyfill shaves a
-     * small but free byte from the initial JS payload.
-     */
+    // Modern browsers all support <link rel="modulepreload"> natively
     modulePreload: { polyfill: false },
 
-    /*
-     * ✅ Disable the compressed-size calculation during the build step.
-     * Vite normally gzips every chunk just to print the "gzip: X kB" column
-     * in the build output — that work is done at build time and thrown away.
-     * Your actual server (nginx / Caddy / Vercel) handles real-time
-     * compression at request time.  Turning this off noticeably speeds up
-     * production builds with no effect on the deployed bundle.
-     */
+    // Server handles real compression — skip build-time calculation
     reportCompressedSize: false,
+
+    // Inline assets under 4 kB (icons, tiny SVGs) — saves round-trips
+    assetsInlineLimit: 4096,
 
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // ── React core ────────────────────────────────────────────────────
+          // ── React core ──────────────────────────────────────────────────
           if (
             id.includes("node_modules/react/") ||
-            id.includes("node_modules/react-dom/")
+            id.includes("node_modules/react-dom/") ||
+            id.includes("node_modules/scheduler/")
           ) return "vendor-react";
 
-          // ── Framer Motion ─────────────────────────────────────────────────
-          if (id.includes("node_modules/framer-motion"))
-            return "vendor-motion";
+          // ── Framer Motion ───────────────────────────────────────────────
+          if (
+            id.includes("node_modules/framer-motion") ||
+            id.includes("node_modules/motion-dom") ||
+            id.includes("node_modules/motion-utils")
+          ) return "vendor-motion";
 
-          // ── Radix UI + related headless primitives ────────────────────────
+          // ── Radix UI + related headless primitives ──────────────────────
           if (
             id.includes("node_modules/@radix-ui") ||
             id.includes("node_modules/cmdk") ||
             id.includes("node_modules/vaul")
           ) return "vendor-ui";
 
-          // ── Icon library ──────────────────────────────────────────────────
+          // ── Icon library — tree-shakeable but still large ───────────────
           if (id.includes("node_modules/lucide-react"))
             return "vendor-icons";
 
-          // ── Three-Globe (large, lazy — only loads with Earth3D) ───────────
+          // ── Three-Globe (lazy — only loads with Earth3D) ────────────────
           if (id.includes("node_modules/three-globe"))
             return "vendor-globe";
 
-          // ── Three.js core (separate from three-globe) ─────────────────────
+          // ── Three.js core (separate from three-globe) ───────────────────
           if (
             id.includes("node_modules/three/") &&
             !id.includes("node_modules/three-globe")
           ) return "vendor-three";
 
-          // ── React Three Fiber / postprocessing (if used) ──────────────────
+          // ── React Three Fiber ecosystem ─────────────────────────────────
           if (
-            id.includes("node_modules/@react-three") ||
+            id.includes("node_modules/@react-three/fiber") ||
+            id.includes("node_modules/@react-three/drei") ||
+            id.includes("node_modules/@react-three/postprocessing") ||
             id.includes("node_modules/postprocessing")
           ) return "vendor-r3f";
 
-          // ── Spline runtime — large, lazy-loaded in SplineRobot ───────────
+          // ── Spline runtime — large, lazy-loaded in SplineRobot ──────────
           if (id.includes("node_modules/@splinetool"))
             return "vendor-spline";
 
-          /*
-           * ✅ NEW: jspdf + html2canvas isolated into their own chunk.
-           *
-           * Previously these ended up in the main index bundle because
-           * resume.ts was statically imported in App.tsx.  App.tsx now
-           * dynamically imports resume.ts only when the ?dl=resume query
-           * param is present, so these deps no longer affect first-paint at
-           * all.  Keeping the manualChunk here is belt-and-suspenders: it
-           * ensures that even if something else were to import jspdf in the
-           * future, it will never silently inflate the initial bundle.
-           */
+          // ── PDF generation — dynamic import only (never on first paint) ─
           if (
             id.includes("node_modules/jspdf") ||
-            id.includes("node_modules/html2canvas")
+            id.includes("node_modules/html2canvas") ||
+            id.includes("node_modules/canvg") ||
+            id.includes("node_modules/dompurify")
           ) return "vendor-pdf";
+
+          // ── QR code — small, but only used in ResumeQRModal ─────────────
+          if (id.includes("node_modules/qrcode.react"))
+            return "vendor-qr";
+
+          // ── Type animation — used only in Hero ──────────────────────────
+          if (id.includes("node_modules/react-type-animation"))
+            return "vendor-typeanim";
+
+          // ── D3 + globe data utilities (pulled in by three-globe) ─────────
+          if (
+            id.includes("node_modules/d3-") ||
+            id.includes("node_modules/d3/") ||
+            id.includes("node_modules/delaunator") ||
+            id.includes("node_modules/robust-predicates")
+          ) return "vendor-globe";
+
+          // ── H3 (geo indexing used by three-globe) ───────────────────────
+          if (id.includes("node_modules/h3-js"))
+            return "vendor-globe";
         },
       },
     },
