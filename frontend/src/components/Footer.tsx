@@ -63,8 +63,8 @@ export function Footer() {
           </h2>
         </div>
         
-        {/* Description Section */}
-        <p className="text-gray-400 text-sm mb-8 whitespace-nowrap">
+        {/* Description Section - Fixed for Mobile */}
+        <p className="text-gray-400 text-sm mb-8 max-w-md px-4 leading-relaxed">
           Full Stack Developer crafting scalable software and AI-driven solutions for real-world problems.
         </p>
 
