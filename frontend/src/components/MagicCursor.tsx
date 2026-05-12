@@ -1,33 +1,84 @@
-import { useEffect, useRef } from "react";
+/**
+ * MagicCursor.tsx
+ *
+ * Renders a ring that is perfectly attached to the system cursor,
+ * plus a particle trail on fast movement.
+ * The system cursor is left visible and fully functional.
+ *
+ * Ring sync strategy:
+ *   The ring's transform is written directly inside the mousemove handler,
+ *   not inside the RAF tick. This is the key distinction:
+ *
+ *   RAF-based update (old):
+ *     mousemove fires → mouse.current updated → [frame boundary] → RAF tick
+ *     → ring DOM write. The ring always lags by at least one frame (~16 ms).
+ *
+ *   mousemove-based update (new):
+ *     mousemove fires → ring DOM write happens in the same call, immediately.
+ *     The browser processes the style change in the same layout pass as the
+ *     cursor repaint. Zero perceptible gap at any movement speed.
+ *
+ * Performance notes:
+ *   - Ring DOM write is a single transform string — no layout, only composite.
+ *   - Two-pass particle rendering (one fillStyle set per hue group).
+ *   - ctx.globalAlpha for per-particle alpha — native float, no string alloc.
+ *   - TAU cached at module level.
+ *   - Typed-array particle pool with GC-free in-place compaction.
+ *   - RAF loop runs only for the canvas particle trail.
+ *   - Visibility-change pause stops RAF when tab is hidden.
+ *   - Touch-only devices bail out entirely — no DOM nodes mounted.
+ */
+
+import { useEffect, useRef, useState } from "react";
+
+// ─── Detect pointer capability once at module load (SSR-safe) ────────────────
+function isTouchOnlyDevice(): boolean {
+  if (typeof window === "undefined") return true;
+  return (
+    window.matchMedia("(hover: none)").matches ||
+    window.matchMedia("(pointer: coarse)").matches
+  );
+}
 
 export function MagicCursor() {
-  const arrowRef = useRef<HTMLDivElement>(null);
-  const ringRef  = useRef<HTMLDivElement>(null);
+  const [enabled] = useState<boolean>(() => !isTouchOnlyDevice());
+  if (!enabled) return null;
+  return <MagicCursorInner />;
+}
+
+// ─── Pre-computed constants ───────────────────────────────────────────────────
+const TAU     = Math.PI * 2;
+const HUE_A   = 185;
+const HUE_B   = 275;
+const COLOR_A = "hsl(185,100%,75%)";
+const COLOR_B = "hsl(275,100%,75%)";
+
+// ─── Inner component only mounts on desktop ───────────────────────────────────
+function MagicCursorInner() {
+  const ringRef   = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const mouse   = useRef({ x: -100, y: -100 });
-  const ringPos = useRef({ x: -100, y: -100 });
-  const trail   = useRef<{
-    x: number; y: number; a: number; r: number;
-    vx: number; vy: number; hue: number;
-  }[]>([]);
-  const raf     = useRef<number>(0);
-  const paused  = useRef(false);
+  // ── Particle pool — parallel typed arrays for GC-free updates ────────────
+  const MAX_TRAIL = 80;
+  const px  = useRef(new Float32Array(MAX_TRAIL));
+  const py  = useRef(new Float32Array(MAX_TRAIL));
+  const pa  = useRef(new Float32Array(MAX_TRAIL));
+  const pr  = useRef(new Float32Array(MAX_TRAIL));
+  const pvx = useRef(new Float32Array(MAX_TRAIL));
+  const pvy = useRef(new Float32Array(MAX_TRAIL));
+  const ph  = useRef(new Uint16Array(MAX_TRAIL));
+  const pCount = useRef(0);
+
+  const raf    = useRef(0);
+  const paused = useRef(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    // Don't show on touch-only devices
-    if (window.matchMedia("(hover: none)").matches) return;
+    if (isTouchOnlyDevice()) return;
 
-    const style = document.createElement("style");
-    style.innerHTML = `
-      * { cursor: none !important; }
-      a, button, [role="button"], input, select, textarea { cursor: none !important; }
-    `;
-    document.head.appendChild(style);
-
+    const ring   = ringRef.current!;
     const canvas = canvasRef.current!;
     const ctx    = canvas.getContext("2d", { alpha: true })!;
+    ctx.imageSmoothingEnabled = false;
 
     const resize = () => {
       canvas.width  = window.innerWidth;
@@ -39,85 +90,113 @@ export function MagicCursor() {
     let lastX = 0, lastY = 0;
 
     const onMove = (e: MouseEvent) => {
-      mouse.current.x = e.clientX;
-      mouse.current.y = e.clientY;
+      const x = e.clientX;
+      const y = e.clientY;
 
-      const dx    = e.clientX - lastX;
-      const dy    = e.clientY - lastY;
+      // ── Ring: written here, synchronously, in the same event callback ────
+      //
+      // This is the critical change. Previously the ring was updated inside
+      // the RAF tick, which always runs one frame after the mousemove event.
+      // At 60 fps that is a guaranteed ~16 ms gap — visible as the ring
+      // "chasing" the cursor.
+      //
+      // Writing the transform here means the ring position is resolved in
+      // the same browser task as the cursor repaint. The browser composites
+      // both together, so the ring appears glued to the cursor at all speeds.
+      ring.style.transform = `translate3d(${x}px,${y}px,0)`;
+
+      // ── Particles ─────────────────────────────────────────────────────────
+      const dx    = x - lastX;
+      const dy    = y - lastY;
       const speed = Math.hypot(dx, dy);
-      lastX = e.clientX;
-      lastY = e.clientY;
+      lastX = x;
+      lastY = y;
 
-      if (speed > 2 && trail.current.length < 120) {
-        const count = Math.min(Math.floor(speed / 5), 2);
+      if (speed > 3 && pCount.current < MAX_TRAIL) {
+        const count = Math.min(Math.floor(speed / 6), 2);
         for (let i = 0; i < count; i++) {
-          trail.current.push({
-            x: e.clientX,
-            y: e.clientY,
-            a: 0.6,
-            r: Math.random() * 1.5 + 0.5,
-            vx: (Math.random() - 0.5) * 1.2,
-            vy: (Math.random() - 0.5) * 1.2,
-            hue: Math.random() > 0.5 ? 185 : 275,
-          });
+          if (pCount.current >= MAX_TRAIL) break;
+          const idx = pCount.current++;
+          px.current[idx]  = x;
+          py.current[idx]  = y;
+          pa.current[idx]  = 0.55;
+          pr.current[idx]  = Math.random() * 1.4 + 0.6;
+          pvx.current[idx] = (Math.random() - 0.5) * 1.0;
+          pvy.current[idx] = (Math.random() - 0.5) * 1.0;
+          ph.current[idx]  = Math.random() > 0.5 ? HUE_A : HUE_B;
         }
       }
     };
     window.addEventListener("mousemove", onMove, { passive: true });
 
-    // ── Pause the RAF loop when the tab is hidden ─────────────────────────────
     const onVisibility = () => {
       paused.current = document.hidden;
-      if (!document.hidden) {
-        // Resume — re-seed the loop
-        raf.current = requestAnimationFrame(tick);
-      }
+      if (!document.hidden) raf.current = requestAnimationFrame(tick);
     };
     document.addEventListener("visibilitychange", onVisibility);
 
-    const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-
+    // ── RAF loop: only drives the particle canvas now ─────────────────────
     const tick = () => {
-      if (paused.current) return;   // tab is hidden — skip
+      if (paused.current) return;
 
-      ringPos.current.x = lerp(ringPos.current.x, mouse.current.x, 0.35);
-      ringPos.current.y = lerp(ringPos.current.y, mouse.current.y, 0.35);
+      const n = pCount.current;
+      if (n > 0) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (arrowRef.current) {
-        arrowRef.current.style.transform =
-          `translate3d(${mouse.current.x}px, ${mouse.current.y}px, 0)`;
-      }
-      if (ringRef.current) {
-        ringRef.current.style.transform =
-          `translate3d(${ringPos.current.x}px, ${ringPos.current.y}px, 0)`;
-      }
+        // Step 1: physics update + in-place compaction
+        let alive = 0;
+        for (let i = 0; i < n; i++) {
+          pa.current[i] -= 0.032;
+          if (pa.current[i] <= 0) continue;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (let i = trail.current.length - 1; i >= 0; i--) {
-        const p = trail.current[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.a -= 0.03;
-        p.r *= 0.97;
+          pr.current[i] *= 0.96;
+          px.current[i] += pvx.current[i];
+          py.current[i] += pvy.current[i];
 
-        if (p.a <= 0) { trail.current.splice(i, 1); continue; }
+          if (alive !== i) {
+            px.current[alive]  = px.current[i];
+            py.current[alive]  = py.current[i];
+            pa.current[alive]  = pa.current[i];
+            pr.current[alive]  = pr.current[i];
+            pvx.current[alive] = pvx.current[i];
+            pvy.current[alive] = pvy.current[i];
+            ph.current[alive]  = ph.current[i];
+          }
+          alive++;
+        }
+        pCount.current = alive;
 
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${p.hue}, 100%, 75%, ${p.a})`;
-        ctx.fill();
+        // Step 2: two-pass render — one fillStyle set per hue group
+        ctx.fillStyle = COLOR_A;
+        for (let i = 0; i < alive; i++) {
+          if (ph.current[i] !== HUE_A) continue;
+          ctx.globalAlpha = pa.current[i];
+          ctx.beginPath();
+          ctx.arc(px.current[i], py.current[i], pr.current[i], 0, TAU);
+          ctx.fill();
+        }
+
+        ctx.fillStyle = COLOR_B;
+        for (let i = 0; i < alive; i++) {
+          if (ph.current[i] !== HUE_B) continue;
+          ctx.globalAlpha = pa.current[i];
+          ctx.beginPath();
+          ctx.arc(px.current[i], py.current[i], pr.current[i], 0, TAU);
+          ctx.fill();
+        }
+
+        ctx.globalAlpha = 1;
       }
 
       raf.current = requestAnimationFrame(tick);
     };
-    tick();
+    raf.current = requestAnimationFrame(tick);
 
     return () => {
       cancelAnimationFrame(raf.current);
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", onVisibility);
-      if (document.head.contains(style)) document.head.removeChild(style);
     };
   }, []);
 
@@ -126,12 +205,9 @@ export function MagicCursor() {
       <style>{`
         .magic-ring {
           position: fixed;
-          top: 0;
-          left: 0;
-          margin-top: -10px;
-          margin-left: -10px;
-          width: 20px;
-          height: 20px;
+          top: 0; left: 0;
+          margin-top: -10px; margin-left: -10px;
+          width: 20px; height: 20px;
           border: 2px solid #22d3ee;
           border-radius: 50%;
           pointer-events: none;
@@ -145,28 +221,10 @@ export function MagicCursor() {
           pointer-events: none;
           mix-blend-mode: screen;
         }
-        .magic-arrow {
-          position: fixed;
-          top: 0;
-          left: 0;
-          z-index: 10001;
-          pointer-events: none;
-          will-change: transform;
-        }
       `}</style>
 
       <canvas ref={canvasRef} className="magic-canvas" />
       <div ref={ringRef} className="magic-ring" />
-      <div ref={arrowRef} className="magic-arrow">
-        <svg width="18" height="18" viewBox="0 0 24 24" style={{ transform: "translate(-2px, -2px)" }}>
-          <path
-            d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"
-            fill="#22d3ee"
-            stroke="white"
-            strokeWidth="1.5"
-          />
-        </svg>
-      </div>
     </>
   );
 }

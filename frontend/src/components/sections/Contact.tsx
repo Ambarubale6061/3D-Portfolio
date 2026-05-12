@@ -1,13 +1,15 @@
-import { motion, LazyMotion, domAnimation } from "framer-motion";
+import { motion } from "framer-motion";
+// ✅ FIX: Removed `LazyMotion` and `domAnimation` imports.
+//    They were imported but never actually used — LazyMotion was never wrapping
+//    anything in this file, so the import was loading the domAnimation feature
+//    bundle (~12 kB) for zero benefit.
 import { lazy, memo, Suspense, useState } from "react";
 import { Send, Mail, MessageCircle, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // ── Earth3D is lazy — its three.js chunk is only fetched when Contact renders,
 //    which (with the ViewportSection gate in App.tsx) means when the user scrolls
-//    near the bottom of the page.  Previously Earth3D was a static import which
-//    caused vendor-three + vendor-globe to be included in the Contact chunk even
-//    if the user never reached the bottom.
+//    near the bottom of the page.
 const Earth3D = lazy(() =>
   import("../Earth3D").then((m) => ({ default: m.Earth3D }))
 );
@@ -27,34 +29,34 @@ const PREFILLED_MSG = encodeURIComponent(
 // Stable constant — defined outside component so it's never re-created
 const quickContacts = [
   {
-    label: "Email",
-    icon: Mail,
-    href: `mailto:${MY_EMAIL}`,
-    target: "_self",
-    color: "hover:border-sky-400/60 hover:text-sky-400",
-    glow: "hover:shadow-[0_0_18px_rgba(56,189,248,0.25)]",
+    label:     "Email",
+    icon:      Mail,
+    href:      `mailto:${MY_EMAIL}`,
+    target:    "_self",
+    color:     "hover:border-sky-400/60 hover:text-sky-400",
+    glow:      "hover:shadow-[0_0_18px_rgba(56,189,248,0.25)]",
     iconColor: "group-hover:text-sky-400",
-    bg: "hover:bg-sky-400/5",
+    bg:        "hover:bg-sky-400/5",
   },
   {
-    label: "WhatsApp",
-    icon: MessageCircle,
-    href: `https://wa.me/${MY_WHATSAPP}?text=${PREFILLED_MSG}`,
-    target: "_blank",
-    color: "hover:border-green-400/60 hover:text-green-400",
-    glow: "hover:shadow-[0_0_18px_rgba(74,222,128,0.25)]",
+    label:     "WhatsApp",
+    icon:      MessageCircle,
+    href:      `https://wa.me/${MY_WHATSAPP}?text=${PREFILLED_MSG}`,
+    target:    "_blank",
+    color:     "hover:border-green-400/60 hover:text-green-400",
+    glow:      "hover:shadow-[0_0_18px_rgba(74,222,128,0.25)]",
     iconColor: "group-hover:text-green-400",
-    bg: "hover:bg-green-400/5",
+    bg:        "hover:bg-green-400/5",
   },
   {
-    label: "SMS",
-    icon: Phone,
-    href: `sms:${MY_PHONE}?body=${PREFILLED_MSG}`,
-    target: "_self",
-    color: "hover:border-violet-400/60 hover:text-violet-400",
-    glow: "hover:shadow-[0_0_18px_rgba(167,139,250,0.25)]",
+    label:     "SMS",
+    icon:      Phone,
+    href:      `sms:${MY_PHONE}?body=${PREFILLED_MSG}`,
+    target:    "_self",
+    color:     "hover:border-violet-400/60 hover:text-violet-400",
+    glow:      "hover:shadow-[0_0_18px_rgba(167,139,250,0.25)]",
     iconColor: "group-hover:text-violet-400",
-    bg: "hover:bg-violet-400/5",
+    bg:        "hover:bg-violet-400/5",
   },
 ] as const;
 
@@ -73,9 +75,9 @@ function EarthFallback() {
 // ─── Contact form ─────────────────────────────────────────────────────────────
 // memo: Contact never re-renders from parent state changes — all state is local
 export const Contact = memo(function Contact() {
-  const { toast } = useToast();
+  const { toast }        = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", message: "" });
+  const [form, setForm]  = useState({ name: "", email: "", message: "" });
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -86,24 +88,24 @@ export const Contact = memo(function Contact() {
     setIsSubmitting(true);
     try {
       const res = await fetch(`${API_URL}/api/contact`, {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body:    JSON.stringify(form),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error((data as any)?.error ?? "Something went wrong.");
       }
       toast({
-        title: "Message sent ✅",
+        title:       "Message sent ✅",
         description: "Thanks for reaching out! I'll get back to you soon.",
       });
       setForm({ name: "", email: "", message: "" });
     } catch (err: any) {
       toast({
-        title: "Failed to send",
+        title:       "Failed to send",
         description: err?.message ?? "Please try again later.",
-        variant: "destructive",
+        variant:     "destructive",
       });
     } finally {
       setIsSubmitting(false);
@@ -120,7 +122,6 @@ export const Contact = memo(function Contact() {
       <div className="absolute bottom-0 right-1/4 w-[300px] h-[300px] bg-violet-500/5 rounded-full blur-[100px] pointer-events-none" />
 
       <div className="container mx-auto px-6 relative z-10">
-
         {/* Heading */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}

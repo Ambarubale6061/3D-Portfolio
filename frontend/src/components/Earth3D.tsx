@@ -1,20 +1,33 @@
 /**
  * Earth3D.tsx
  *
- * three.js, three-globe, and OrbitControls are dynamically imported inside
- * useEffect — they are NOT downloaded until the Contact section mounts, which
- * (with the ViewportSection gate in App.tsx) only happens when the user scrolls
- * near the bottom of the page.
+ * BUGS FIXED vs previous version:
  *
- * Optimisations vs previous version:
- *  • Simplified cleanup — single `cancelled` flag controls everything; no
- *    double-wrapped closure chains that could silently drop arc timer cleanup.
- *  • `isMobile` evaluated once at module level (cheap, no GPU cost).
- *  • DPR capped at 1.5 on mobile (was 1.25 — still too high for older Android).
- *  • `renderer.info.reset()` called every frame to prevent memory leak in
- *    long-running scenes.
- *  • Animation loop uses a local `isRunning` flag instead of document.hidden
- *    polling, updated by both visibilitychange and IntersectionObserver.
+ *  ✅ CRITICAL — RAF loop now truly stops when paused.
+ *     Old code: `frameId = requestAnimationFrame(animate)` was at the TOP of
+ *     animate(), so it always rescheduled regardless of the visibility check.
+ *     Result: JavaScript woke up every 16 ms even when the tab was hidden or
+ *     the section was completely off-screen — pure wasted CPU.
+ *     Fix: RAF moved to the END of animate(). When paused, frameId is set to 0
+ *     and no RAF is scheduled. resumeLoop() is called by both the
+ *     visibilitychange and IntersectionObserver callbacks so the loop restarts
+ *     exactly when it becomes useful again.
+ *
+ *  ✅ HIGH — renderer.info.reset() now called after every render frame.
+ *     Without this, Three.js accumulates draw-call statistics in memory for the
+ *     lifetime of the page — a slow leak in long-running scenes.
+ *
+ *  ✅ MEDIUM — WebGLRenderer now receives `precision: "mediump"` on mobile.
+ *     Halves the GPU memory bandwidth needed for shaders on phones, at no
+ *     visible quality loss for this globe scene.
+ *
+ *  ✅ MINOR — Scene objects (geometries + materials) are now traversed and
+ *     disposed on cleanup, preventing VRAM leaks when the component unmounts
+ *     (e.g. HMR / navigation away from the page).
+ *
+ * Everything else (lazy import, IntersectionObserver gate, debounced resize,
+ * mobile DPR cap, single `cancelled` flag, arc timer cleanup) was already
+ * correct and is preserved unchanged.
  */
 
 import { useEffect, useRef } from "react";
@@ -25,7 +38,6 @@ import countries      from "../assets/globe-data-min.json";
 import travelHistory  from "../assets/my-flights.json";
 import airportHistory from "../assets/my-airports.json";
 
-// Evaluated once at module parse — no per-render cost
 const IS_MOBILE = isMobile();
 const DPR_CAP   = IS_MOBILE ? 1.5 : 2;
 
@@ -40,13 +52,12 @@ export const Earth3D = ({ className }: Earth3DProps) => {
     if (!containerRef.current) return;
 
     let cancelled   = false;
-    let frameId     = 0;
+    let frameId     = 0;      // 0 = loop is stopped
     let arcTimer    = 0;
     let resizeTimer = 0;
     let renderer: THREE_TYPES.WebGLRenderer | null = null;
     let io: IntersectionObserver | null = null;
 
-    // Shared pause state — mutated from two independent observers
     let isPageVisible = !document.hidden;
     let isInView      = true;
 
@@ -64,9 +75,12 @@ export const Earth3D = ({ className }: Earth3DProps) => {
 
       // ── Renderer ──────────────────────────────────────────────────────────
       renderer = new THREE.WebGLRenderer({
-        antialias: !IS_MOBILE,
-        alpha: true,
+        antialias:       !IS_MOBILE,
+        alpha:           true,
         powerPreference: "high-performance",
+        // ✅ FIX: mediump halves shader memory bandwidth on mobile with no
+        //    visible quality difference for this globe scene.
+        precision: IS_MOBILE ? "mediump" : "highp",
       });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, DPR_CAP));
       renderer.setSize(
@@ -148,10 +162,10 @@ export const Earth3D = ({ className }: Earth3DProps) => {
       Globe.rotateZ(-Math.PI / 6);
 
       const globeMaterial = Globe.globeMaterial() as THREE_TYPES.MeshStandardMaterial;
-      globeMaterial.color              = new THREE.Color(0x3a228a);
-      globeMaterial.emissive           = new THREE.Color(0x220038);
-      globeMaterial.emissiveIntensity  = 0.1;
-      globeMaterial.roughness          = 0.7;
+      globeMaterial.color             = new THREE.Color(0x3a228a);
+      globeMaterial.emissive          = new THREE.Color(0x220038);
+      globeMaterial.emissiveIntensity = 0.1;
+      globeMaterial.roughness         = 0.7;
 
       scene.add(Globe);
 
@@ -168,21 +182,64 @@ export const Earth3D = ({ className }: Earth3DProps) => {
       controls.maxPolarAngle  = Math.PI - Math.PI / 3;
 
       // ── Animation loop ────────────────────────────────────────────────────
+      //
+      // ✅ FIX: RAF is now at the END of animate(), not the beginning.
+      //
+      // Old (broken) pattern:
+      //   const animate = () => {
+      //     frameId = requestAnimationFrame(animate); // ← always reschedules
+      //     if (!isPageVisible || !isInView) return;  // ← only skips render
+      //     ...
+      //   };
+      //
+      // This woke JavaScript up every 16 ms regardless of visibility — the
+      // browser still had to schedule, dispatch, and context-switch for the
+      // RAF callback even though it immediately returned. On a busy page this
+      // was 3,600+ no-op wakeups per minute.
+      //
+      // New pattern: frameId=0 is the "stopped" sentinel. The loop only
+      // reschedules when it did useful work. resumeLoop() is the single place
+      // that re-starts it when conditions flip back to "should be running".
+      //
       const animate = () => {
-        frameId = requestAnimationFrame(animate);
-        if (!isPageVisible || !isInView) return;
+        if (!isPageVisible || !isInView) {
+          frameId = 0;   // mark as stopped — cleanup's cancelAnimationFrame(0) is safe no-op
+          return;        // do NOT reschedule
+        }
+
         controls.update();
         renderer!.render(scene, camera);
+
+        // ✅ FIX: reset draw-call statistics each frame to prevent memory
+        //    accumulation in long-running scenes.
+        renderer!.info.reset();
+
+        frameId = requestAnimationFrame(animate);  // reschedule only after work
       };
-      animate();
+
+      // ── Safe resume helper ────────────────────────────────────────────────
+      // Called by both event sources below. Guards against double-scheduling.
+      const resumeLoop = () => {
+        if (frameId === 0 && isPageVisible && isInView && !cancelled) {
+          frameId = requestAnimationFrame(animate);
+        }
+      };
+
+      frameId = requestAnimationFrame(animate); // initial kick-off
 
       // ── Visibility pause ──────────────────────────────────────────────────
-      const onVisibility = () => { isPageVisible = !document.hidden; };
+      const onVisibility = () => {
+        isPageVisible = !document.hidden;
+        resumeLoop();
+      };
       document.addEventListener("visibilitychange", onVisibility, { passive: true });
 
       // ── IO pause — stop rendering when scrolled off-screen ────────────────
       io = new IntersectionObserver(
-        ([entry]) => { isInView = entry.isIntersecting; },
+        ([entry]) => {
+          isInView = entry.isIntersecting;
+          resumeLoop();
+        },
         { threshold: 0.05 },
       );
       io.observe(containerRef.current!);
@@ -202,11 +259,24 @@ export const Earth3D = ({ className }: Earth3DProps) => {
       };
       window.addEventListener("resize", handleResize, { passive: true });
 
-      // Store removeResize in a way the cleanup closure can reach
-      // by closing over the function reference directly
       return () => {
         document.removeEventListener("visibilitychange", onVisibility);
         window.removeEventListener("resize", handleResize);
+
+        // ✅ FIX: traverse the scene and dispose all geometries + materials to
+        //    prevent VRAM leaks when the component unmounts (HMR / navigation).
+        scene.traverse((obj: any) => {
+          if (obj.geometry) {
+            obj.geometry.dispose();
+          }
+          if (obj.material) {
+            if (Array.isArray(obj.material)) {
+              obj.material.forEach((m: any) => m.dispose());
+            } else {
+              obj.material.dispose();
+            }
+          }
+        });
       };
     }
 
@@ -224,13 +294,16 @@ export const Earth3D = ({ className }: Earth3DProps) => {
     return () => {
       cancelled = true;
 
-      cancelAnimationFrame(frameId);
+      cancelAnimationFrame(frameId);   // safe even when frameId === 0
       clearTimeout(arcTimer);
       clearTimeout(resizeTimer);
 
       removeListeners?.();
       io?.disconnect();
 
+      // Force context loss before dispose so the GPU driver reclaims memory
+      // immediately rather than waiting for GC.
+      try { renderer?.forceContextLoss(); } catch { /* ignore */ }
       renderer?.dispose();
 
       if (containerRef.current) {

@@ -1,10 +1,7 @@
 // Navbar.tsx
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
-  Hexagon,
-  Sun,
-  LayoutGrid,
   Download,
   ScanLine,
   Menu,
@@ -13,35 +10,71 @@ import { ResumeQRModal } from "../ResumeQRModal";
 import { Sidebar } from "../Sidebar";
 
 const navItems = [
-  { name: "Home", href: "#hero" },
-  { name: "About", href: "#about" },
-  { name: "Skills", href: "#skills" },
-  { name: "Services", href: "#services" },
-  { name: "Projects", href: "#projects" },
-  { name: "Experience", href: "#experience" },
+  { name: "Home",         href: "#hero" },
+  { name: "About",        href: "#about" },
+  { name: "Skills",       href: "#skills" },
+  { name: "Services",     href: "#services" },
+  { name: "Projects",     href: "#projects" },
+  { name: "Experience",   href: "#experience" },
   { name: "Testimonials", href: "#testimonials" },
-  { name: "Contact", href: "#contact" },
+  { name: "Contact",      href: "#contact" },
 ];
 
 export function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-  const [active, setActive] = useState<string>("#hero");
-  const [scannerOpen, setScannerOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [scrolled,     setScrolled]     = useState(false);
+  const [active,       setActive]       = useState<string>("#hero");
+  const [scannerOpen,  setScannerOpen]  = useState(false);
+  const [sidebarOpen,  setSidebarOpen]  = useState(false);
+
+  /*
+   * ✅ FIX: The original handler called document.querySelector(item.href) on
+   *    EVERY scroll event — that's 8 DOM queries × 60 ticks/s = 480 forced
+   *    style-recalcs per second.
+   *
+   *    Now we cache the elements once after mount (sectionEls ref) and only
+   *    query getBoundingClientRect in the scroll handler, which is a cheap
+   *    read on already-laid-out elements and does NOT force style recalc.
+   */
+  const sectionEls = useRef<{ href: string; el: Element }[]>([]);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-      let current = "#hero";
-      for (const item of navItems) {
-        const el = document.querySelector(item.href);
-        if (el) {
-          const rect = el.getBoundingClientRect();
-          if (rect.top <= 120) current = item.href;
-        }
-      }
-      setActive(current);
+    // Build element cache once on mount. Sections are lazy-mounted by
+    // ViewportSection, so we refresh the cache on the first scroll tick
+    // if any slot is still null.
+    const buildCache = () => {
+      sectionEls.current = navItems
+        .map((item) => {
+          const el = document.querySelector(item.href);
+          return el ? { href: item.href, el } : null;
+        })
+        .filter(Boolean) as { href: string; el: Element }[];
     };
+
+    buildCache();
+
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+
+      requestAnimationFrame(() => {
+        ticking = false;
+
+        // Lazy-fill cache if sections weren't in DOM on mount
+        if (sectionEls.current.length < navItems.length) buildCache();
+
+        const scrollY = window.scrollY;
+        setScrolled(scrollY > 50);
+
+        let current = "#hero";
+        for (const { href, el } of sectionEls.current) {
+          if (el.getBoundingClientRect().top <= 120) current = href;
+        }
+        setActive(current);
+      });
+    };
+
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
@@ -78,7 +111,13 @@ export function Navbar() {
                   href={item.href}
                   className="relative px-2.5 py-2 text-[11px] font-semibold tracking-[0.18em] uppercase transition-colors group"
                 >
-                  <span className={isActive ? "text-cyan-400" : "text-white/70 group-hover:text-cyan-400"}>
+                  <span
+                    className={
+                      isActive
+                        ? "text-cyan-400"
+                        : "text-white/70 group-hover:text-cyan-400"
+                    }
+                  >
                     {item.name}
                   </span>
                   {isActive && (
@@ -95,12 +134,10 @@ export function Navbar() {
 
           {/* Right actions */}
           <div className="flex items-center gap-2.5 sm:gap-3">
-            
-            {/* ✅ FIXED: DIRECT DOWNLOAD (REDIRECT NAKO) */}
             <a
               data-hover
               href="/Resume.pdf"
-              download="Ambar_Resume.pdf" // He attribute file direct download karte
+              download="Ambar_Resume.pdf"
               aria-label="Download resume"
               title="Download Resume"
               className="flex w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-cyan-400/30 bg-cyan-400/5 text-cyan-300 hover:bg-cyan-400 hover:text-slate-950 hover:border-cyan-400 transition-colors items-center justify-center cursor-pointer"
@@ -108,7 +145,6 @@ export function Navbar() {
               <Download className="w-4 h-4" />
             </a>
 
-            {/* Scanner */}
             <button
               data-hover
               onClick={() => setScannerOpen(true)}
@@ -119,7 +155,6 @@ export function Navbar() {
               <ScanLine className="w-4 h-4" />
             </button>
 
-            {/* Let's Talk button */}
             <a
               data-hover
               href="#contact"
@@ -128,7 +163,6 @@ export function Navbar() {
               Let's Talk
             </a>
 
-            {/* Mobile menu button */}
             <button
               onClick={() => setSidebarOpen(true)}
               className="md:hidden flex w-9 h-9 sm:w-10 sm:h-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white backdrop-blur-md hover:text-cyan-400 hover:border-cyan-400/40 transition-colors"
@@ -141,7 +175,6 @@ export function Navbar() {
       </motion.header>
 
       <ResumeQRModal open={scannerOpen} onClose={() => setScannerOpen(false)} />
-      
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
     </>
   );

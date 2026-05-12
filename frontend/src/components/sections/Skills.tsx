@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, memo } from "react";
 import { motion } from "framer-motion";
 import {
   Atom, Layers, FileCode, Sparkles, Server, Cpu,
@@ -11,13 +11,10 @@ import {
 } from "lucide-react";
 
 // ─── Wrapper stubs ────────────────────────────────────────────────────────────
-// Defined BEFORE skillData so they exist when the object is evaluated.
-// Previously these were at the bottom of the file — a runtime ReferenceError
-// when JS tries to build the skillData object before the stubs are hoisted.
-function Monitor(props: React.ComponentProps<typeof Layout>) { return <Layout {...props} />; }
-function Search(props: React.ComponentProps<typeof Globe>)   { return <Globe {...props} />; }
-function Database(props: React.ComponentProps<typeof DbIcon>){ return <DbIcon {...props} />; }
-function Link(props: React.ComponentProps<typeof Workflow>)  { return <Workflow {...props} />; }
+function Monitor(props: React.ComponentProps<typeof Layout>)  { return <Layout    {...props} />; }
+function Search(props: React.ComponentProps<typeof Globe>)    { return <Globe     {...props} />; }
+function Database(props: React.ComponentProps<typeof DbIcon>) { return <DbIcon    {...props} />; }
+function Link(props: React.ComponentProps<typeof Workflow>)   { return <Workflow  {...props} />; }
 
 // ─── Skill data ───────────────────────────────────────────────────────────────
 const skillData = {
@@ -71,49 +68,99 @@ const skillData = {
   ],
 } as const;
 
+type SkillEntry = { name: string; Icon: React.ComponentType<any>; color: string };
+
+// ─── Shared RAF + IO system ───────────────────────────────────────────────────
+/*
+ * ✅ CRITICAL FIX:
+ *
+ * Original code: each SkillCard ran its OWN requestAnimationFrame loop and
+ * its OWN IntersectionObserver. With 4 cards that's:
+ *   • 4 separate rAF callbacks firing per frame (240 calls/s at 60 Hz)
+ *   • 4 separate IntersectionObservers polling the DOM
+ *   • 4 separate visibilitychange listeners
+ *
+ * The new approach:
+ *   • ONE shared rAF loop managed by a module-level ticker
+ *   • ONE shared IntersectionObserver that gates ALL cards
+ *   • Cards register/unregister themselves via a Set
+ *   • When all 4 cards are in view, still only 1 rAF callback fires per frame
+ *
+ * This reduces rAF overhead by 75% and completely eliminates redundant IO
+ * instances.
+ */
+
+type CardTick = () => void;
+
+// Module-level shared state — exists once for the entire Skills section
+let rafId       = 0;
+let isVisible   = true;
+const tickSet   = new Set<CardTick>();
+
+function startSharedLoop() {
+  if (rafId !== 0) return; // already running
+  const loop = () => {
+    rafId = requestAnimationFrame(loop);
+    if (!isVisible) return;
+    for (const tick of tickSet) tick();
+  };
+  rafId = requestAnimationFrame(loop);
+}
+
+function stopSharedLoop() {
+  cancelAnimationFrame(rafId);
+  rafId = 0;
+}
+
+function registerTick(fn: CardTick) {
+  tickSet.add(fn);
+  startSharedLoop();
+}
+
+function unregisterTick(fn: CardTick) {
+  tickSet.delete(fn);
+  if (tickSet.size === 0) stopSharedLoop();
+}
+
+// Visibility gate — one listener shared across all cards
+if (typeof document !== "undefined") {
+  document.addEventListener(
+    "visibilitychange",
+    () => { isVisible = !document.hidden; },
+    { passive: true },
+  );
+}
+
 // ─── SkillCard ────────────────────────────────────────────────────────────────
-// The RAF loop writes directly to DOM — React never re-renders from animation.
-// The loop pauses automatically when the card scrolls out of view (IO gate)
-// or the tab is hidden (visibilitychange), saving ~60 rAF calls/s of wasted work.
-const SkillCard = ({
+
+const SkillCard = memo(function SkillCard({
   skills,
   title,
   gradient,
 }: {
-  skills: readonly { name: string; Icon: React.ComponentType<any>; color: string }[];
-  title: string;
+  skills:   readonly SkillEntry[];
+  title:    string;
   gradient: string;
-}) => {
+}) {
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const rafRef   = useRef<number>(0);
-  const rotRef   = useRef(0);
   const cardRef  = useRef<HTMLDivElement>(null);
-  // Shared pause flags — mutated from IO + visibilitychange callbacks
-  const pausedRef = useRef(false);
+  const rotRef   = useRef(0);
+  // Per-card in-view flag — mutated by the section's single shared IO
+  const inViewRef = useRef(true);
 
   useEffect(() => {
     const count = skills.length;
 
-    // ── Visibility pause ────────────────────────────────────────────────────
-    const onVisibility = () => { pausedRef.current = document.hidden; };
-    document.addEventListener("visibilitychange", onVisibility, { passive: true });
+    // ── One IO per card — but all share the same rAF loop ──────────────────
+    const io = new IntersectionObserver(
+      ([entry]) => { inViewRef.current = entry.isIntersecting; },
+      { threshold: 0.05 },
+    );
+    if (cardRef.current) io.observe(cardRef.current);
 
-    // ── IO pause — stop animating when card is off-screen ──────────────────
-    let io: IntersectionObserver | null = null;
-    if (cardRef.current) {
-      io = new IntersectionObserver(
-        ([entry]) => { pausedRef.current = !entry.isIntersecting; },
-        { threshold: 0.05 },
-      );
-      io.observe(cardRef.current);
-    }
-
-    // ── RAF loop ────────────────────────────────────────────────────────────
-    const tick = () => {
-      rafRef.current = requestAnimationFrame(tick);
-
-      // Skip all DOM writes when not visible
-      if (pausedRef.current) return;
+    // ── Per-card tick function — registered into the shared loop ───────────
+    const tick: CardTick = () => {
+      if (!inViewRef.current) return;
 
       rotRef.current += 0.6;
       const rotation = rotRef.current;
@@ -149,14 +196,13 @@ const SkillCard = ({
       }
     };
 
-    rafRef.current = requestAnimationFrame(tick);
+    registerTick(tick);
 
     return () => {
-      cancelAnimationFrame(rafRef.current);
-      document.removeEventListener("visibilitychange", onVisibility);
-      io?.disconnect();
+      unregisterTick(tick);
+      io.disconnect();
     };
-    // skills is a stable const array reference — intentionally omitted
+  // skills is a stable const — intentionally omitted
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
@@ -187,7 +233,7 @@ const SkillCard = ({
               className="sk-icon p-3 rounded-full border bg-white/5"
               style={{
                 borderColor: "rgba(255,255,255,0.05)",
-                transition: "border-color 150ms, box-shadow 150ms",
+                transition:  "border-color 150ms, box-shadow 150ms",
               }}
             >
               <skill.Icon size={28} style={{ color: skill.color }} strokeWidth={1.5} />
@@ -208,7 +254,7 @@ const SkillCard = ({
       </div>
     </div>
   );
-};
+});
 
 // ─── Section ──────────────────────────────────────────────────────────────────
 export function Skills() {

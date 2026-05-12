@@ -1,5 +1,8 @@
-import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { memo } from "react";
+import { motion } from "framer-motion";
+// ✅ FIX: Removed unused `AnimatePresence` import — it was pulling in extra
+//    Framer Motion internals (the presence context + exit animation scheduler)
+//    even though nothing in this file ever used it.
 import { ArrowUpRight, Github } from "lucide-react";
 
 // ─── Project Data ─────────────────────────────────────────────────────────────
@@ -20,7 +23,8 @@ const projects: Project[] = [
   {
     title: "AgenticAI Studio",
     tagline: "Autonomous agent orchestration",
-    description: "Architected a multi-agent AI coding platform (Planner, Coder, Debugger) that automates end-to-end code generation, execution, and debugging. Features real-time streaming (SSE) with <2s latency, agent memory, version control, and a hybrid execution engine within a browser-based IDE.",
+    description:
+      "Architected a multi-agent AI coding platform (Planner, Coder, Debugger) that automates end-to-end code generation, execution, and debugging. Features real-time streaming (SSE) with <2s latency, agent memory, version control, and a hybrid execution engine within a browser-based IDE.",
     tech: [
       { name: "React",      logo: "/React.png" },
       { name: "TypeScript", logo: "/ts.svg" },
@@ -37,7 +41,8 @@ const projects: Project[] = [
   {
     title: "FutureCart",
     tagline: "AI-powered commerce",
-    description: "Built a scalable full-stack eCommerce platform supporting 50+ products with filtering, cart, wishlist, and secure checkout. Features a real-time product management system via Supabase Realtime, reducing admin update delays by 60%, with role-based architecture and chatbot integration.",
+    description:
+      "Built a scalable full-stack eCommerce platform supporting 50+ products with filtering, cart, wishlist, and secure checkout. Features a real-time product management system via Supabase Realtime, reducing admin update delays by 60%, with role-based architecture and chatbot integration.",
     tech: [
       { name: "React",        logo: "/React.png" },
       { name: "Tailwind CSS", logo: "/Tailwind CSS.png" },
@@ -53,7 +58,8 @@ const projects: Project[] = [
   {
     title: "Connectly",
     tagline: "Real-time collaboration",
-    description: "Developed a scalable social media platform supporting posts, reels, stories, and real-time interactions. Delivers low-latency (<1s) messaging, notifications, and presence via Supabase Realtime, with peer-to-peer voice and video calling via WebRTC and secure Postgres/RLS backend.",
+    description:
+      "Developed a scalable social media platform supporting posts, reels, stories, and real-time interactions. Delivers low-latency (<1s) messaging, notifications, and presence via Supabase Realtime, with peer-to-peer voice and video calling via WebRTC and secure Postgres/RLS backend.",
     tech: [
       { name: "React",      logo: "/React.png" },
       { name: "TypeScript", logo: "/ts.svg" },
@@ -69,7 +75,8 @@ const projects: Project[] = [
   {
     title: "Task Manager App",
     tagline: "Smart daily task organizer",
-    description: "Built an efficient task management application to organize, track, and manage daily activities with a clean and responsive user interface for improved productivity.",
+    description:
+      "Built an efficient task management application to organize, track, and manage daily activities with a clean and responsive user interface for improved productivity.",
     tech: [
       { name: "Next.js",      logo: "/next.svg" },
       { name: "React",        logo: "/React.png" },
@@ -85,7 +92,8 @@ const projects: Project[] = [
   {
     title: "QuickCart",
     tagline: "Modern e-commerce experience",
-    description: "Developed a modern e-commerce web application with responsive UI, product listings, cart functionality, and secure backend integration using MongoDB and Next.js.",
+    description:
+      "Developed a modern e-commerce web application with responsive UI, product listings, cart functionality, and secure backend integration using MongoDB and Next.js.",
     tech: [
       { name: "Next.js",      logo: "/next.svg" },
       { name: "Node.js",      logo: "/Node.js.png" },
@@ -101,7 +109,8 @@ const projects: Project[] = [
   {
     title: "Weather App",
     tagline: "Live weather insights",
-    description: "Designed a real-time weather dashboard that displays temperature, humidity, and weather forecasts for different cities with a modern and responsive UI.",
+    description:
+      "Designed a real-time weather dashboard that displays temperature, humidity, and weather forecasts for different cities with a modern and responsive UI.",
     tech: [
       { name: "Next.js",      logo: "/next.svg" },
       { name: "Tailwind CSS", logo: "/Tailwind CSS.png" },
@@ -117,15 +126,17 @@ const projects: Project[] = [
 ];
 
 // ─── TechIcon ─────────────────────────────────────────────────────────────────
-// Replaced per-icon useState(hover) with CSS :hover — eliminates 30 React state
-// nodes (6 cards × 5 icons) and their re-render cascades. The tooltip is shown
-// via a CSS group-hover pattern so there are zero JS event handlers needed.
-// AnimatePresence for the tooltip is preserved via the CSS transition approach.
-
-function TechIcon({ name, logo }: { name: string; logo: string }) {
+// Pure CSS hover — no JS state, no React re-renders, no event listeners.
+// memo: icon data is stable (module-level const), never re-renders.
+const TechIcon = memo(function TechIcon({
+  name,
+  logo,
+}: {
+  name: string;
+  logo: string;
+}) {
   return (
     <div className="relative flex items-center justify-center group/icon">
-      {/* Glow ring — CSS hover, no JS */}
       <div className="relative">
         <div className="absolute inset-0 rounded-full bg-cyan-500/20 blur-md opacity-0 group-hover/icon:opacity-100 transition-opacity duration-300 pointer-events-none" />
         <div className="w-10 h-10 rounded-full bg-slate-800/90 border border-white/15 group-hover/icon:border-cyan-400/80 group-hover/icon:shadow-[0_0_12px_rgba(34,211,238,0.4)] transition-all duration-300 flex items-center justify-center">
@@ -135,32 +146,34 @@ function TechIcon({ name, logo }: { name: string; logo: string }) {
             loading="lazy"
             decoding="async"
             className="w-5 h-5 object-contain"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = "none";
+            }}
           />
         </div>
       </div>
-
-      {/* Tooltip — pure CSS, no state */}
       <div className="absolute -top-9 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-md bg-slate-900 border border-white/10 text-white text-[10px] font-bold whitespace-nowrap z-20 shadow-xl pointer-events-none opacity-0 scale-95 group-hover/icon:opacity-100 group-hover/icon:scale-100 transition-all duration-150">
         {name}
       </div>
     </div>
   );
-}
+});
 
 // ─── ProjectCard ──────────────────────────────────────────────────────────────
-
-function ProjectCard({ project }: { project: Project }) {
+// memo: card only re-renders if its project object reference changes (never)
+const ProjectCard = memo(function ProjectCard({ project }: { project: Project }) {
   return (
     <div className="group relative h-full flex flex-col rounded-3xl border border-white/10 bg-slate-950/80 transition-all duration-500 hover:border-cyan-500/50 hover:shadow-[0_0_40px_rgba(6,182,212,0.15)] overflow-hidden">
-
       {/* Image */}
       <div className="relative w-full h-64 bg-slate-900 flex items-center justify-center overflow-hidden shrink-0">
-        <motion.div
-          className="w-full h-full flex items-center justify-center"
-          whileHover={{ scale: 1.03 }}
-          transition={{ duration: 0.6, ease: [0.33, 1, 0.68, 1] }}
-        >
+        {/*
+         * ✅ FIX: Replaced motion.div whileHover (scale) with CSS transform.
+         *    The original created a Framer Motion subscription for EVERY card
+         *    hover — 6 cards × pointer-enter/leave listeners constantly active.
+         *    CSS transition: transform runs on the compositor thread with zero
+         *    JS involvement.
+         */}
+        <div className="w-full h-full flex items-center justify-center transition-transform duration-[600ms] ease-[cubic-bezier(0.33,1,0.68,1)] group-hover:scale-[1.03]">
           {project.image ? (
             <img
               src={project.image}
@@ -170,14 +183,12 @@ function ProjectCard({ project }: { project: Project }) {
               className="z-10 absolute top-12 translate-y-2 rounded-t-lg shadow-2xl"
               width={460}
               height={300}
-              style={{
-                objectFit: "contain",
-                width: "92%",
-                height: "auto",
-              }}
+              style={{ objectFit: "contain", width: "92%", height: "auto" }}
             />
           ) : (
-            <div className={`w-full h-full bg-gradient-to-br ${project.placeholderGradient} opacity-60`} />
+            <div
+              className={`w-full h-full bg-gradient-to-br ${project.placeholderGradient} opacity-60`}
+            />
           )}
           <div
             className="absolute inset-0 opacity-10 pointer-events-none"
@@ -186,14 +197,18 @@ function ProjectCard({ project }: { project: Project }) {
               backgroundSize: "24px 24px",
             }}
           />
-        </motion.div>
-        <div className={`absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r ${project.accent} opacity-50`} />
+        </div>
+        <div
+          className={`absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r ${project.accent} opacity-50`}
+        />
       </div>
 
       {/* Content */}
       <div className="p-6 flex flex-col flex-1">
         <div className="mb-3">
-          <p className={`text-[10px] font-mono tracking-widest uppercase mb-1 bg-gradient-to-r ${project.accent} bg-clip-text text-transparent font-black`}>
+          <p
+            className={`text-[10px] font-mono tracking-widest uppercase mb-1 bg-gradient-to-r ${project.accent} bg-clip-text text-transparent font-black`}
+          >
             {project.tagline}
           </p>
           <h4 className="text-xl font-bold text-white tracking-tight group-hover:text-cyan-300 transition-colors duration-300">
@@ -232,18 +247,14 @@ function ProjectCard({ project }: { project: Project }) {
       </div>
     </div>
   );
-}
+});
 
 // ─── Main Section ─────────────────────────────────────────────────────────────
 
 export function Projects() {
   return (
-    <section
-      id="projects"
-      className="w-full py-24 px-6 sm:px-10 lg:px-16 scroll-mt-24"
-    >
+    <section id="projects" className="w-full py-24 px-6 sm:px-10 lg:px-16 scroll-mt-24">
       <div className="max-w-7xl mx-auto">
-
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -266,7 +277,12 @@ export function Projects() {
           </p>
         </motion.div>
 
-        {/* Grid */}
+        {/* Grid
+         * ✅ FIX: Stagger delay is capped at 0.05s per card (was 0.08s × idx).
+         *    On mobile the 6th card had a 0.48s delay before starting to
+         *    animate — making the page feel sluggish. 0.05s keeps the cascade
+         *    visible without a long wait.
+         */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
           {projects.map((project, idx) => (
             <motion.div
@@ -274,14 +290,13 @@ export function Projects() {
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: idx * 0.08, duration: 0.6 }}
+              transition={{ delay: Math.min(idx * 0.05, 0.25), duration: 0.6 }}
               className="h-full"
             >
               <ProjectCard project={project} />
             </motion.div>
           ))}
         </div>
-
       </div>
     </section>
   );

@@ -1,20 +1,28 @@
 /**
  * SplineRobot.tsx
  *
- * Optimisations vs. previous version:
- *  • isMobile() computed ONCE on mount (was called inside every mousemove).
- *    On a fast mouse 60 Hz = 3600 DOM reads/min for a function that queries
- *    window.innerWidth. Now it's a single ref set in an effect.
- *  • AbortController for the load promise replaces a freestanding `cancelled`
- *    flag — cleaner and prevents memory leaks when the component unmounts
- *    mid-import.
- *  • `cancelIdleCallback` / `clearTimeout` id typing fixed (was `number`
- *    assigned from either rIC or setTimeout — now uses `ReturnType<>` to
- *    avoid the TypeScript narrowing bug).
- *  • RAF loop ref cleared to 0 on cleanup so double-cancel is a no-op.
- *  • `willChange: "opacity"` removed from the outer div (it was promoting the
- *    entire container to its own GPU layer before it needed to be, increasing
- *    VRAM usage before the canvas is even visible).
+ * BUGS FIXED vs previous version:
+ *
+ *  ✅ HIGH — RAF tick() now fully pauses when the tab is hidden OR the
+ *     component is scrolled off-screen. Previously the loop ran at 60 fps
+ *     regardless — the robot kept tracking the mouse even when the user was
+ *     reading a completely different section of the page.
+ *
+ *     Two guards added:
+ *       1. document.hidden check inside tick() — stops scheduling when tab
+ *          is in the background. visibilitychange resumes it.
+ *       2. IntersectionObserver — stops scheduling when the canvas is not
+ *          in the viewport. Resumes when it scrolls back in.
+ *
+ *  ✅ MEDIUM — findTarget() now retries every 500 ms (up to 5 times) instead
+ *     of a one-shot 500 ms timeout. Spline scenes can take >2 s to fully
+ *     parse object names on slow connections, so the old code silently gave
+ *     up and the head-tracking never activated. The retry loop clears itself
+ *     as soon as the object is found.
+ *
+ * Everything else (idleCallback deferral, AbortController pattern, mobile
+ * detection cached in ref, fallback timer, RAF ref cleared to 0 on cancel)
+ * was already correct and is preserved unchanged.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -48,11 +56,11 @@ export function SplineRobot({
   className = "",
   onLoad,
 }: SplineRobotProps) {
-  const canvasRef  = useRef<HTMLCanvasElement>(null);
+  const canvasRef    = useRef<HTMLCanvasElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const appRef     = useRef<any>(null);
-  const rafRef     = useRef<number>(0);
-  const isMobileRef = useRef(false); // set once on mount
+  const appRef       = useRef<any>(null);
+  const rafRef       = useRef<number>(0);
+  const isMobileRef  = useRef(false);
 
   const target  = useRef({ yaw: 0, pitch: 0 });
   const current = useRef({ yaw: 0, pitch: 0 });
@@ -66,7 +74,7 @@ export function SplineRobot({
 
   // ── Load Spline runtime + scene ─────────────────────────────────────────────
   useEffect(() => {
-    let idleId:       number;
+    let idleId:        number;
     let fallbackTimer: ReturnType<typeof setTimeout>;
     let aborted = false;
 
@@ -124,7 +132,6 @@ export function SplineRobot({
     if (!ready) return;
 
     const onMouseMove = (e: MouseEvent) => {
-      // Use the cached ref — no DOM query per event
       if (isMobileRef.current) return;
       const nx = (e.clientX / window.innerWidth  - 0.5) * 2;
       const ny = (e.clientY / window.innerHeight - 0.5) * 2;
@@ -147,6 +154,7 @@ export function SplineRobot({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let trackedObj: any = null;
 
+    // ── Find target object ────────────────────────────────────────────────────
     const findTarget = () => {
       const spline = appRef.current;
       if (!spline) return null;
@@ -159,11 +167,46 @@ export function SplineRobot({
       return null;
     };
 
-    const probeTimer = setTimeout(() => { trackedObj = findTarget(); }, 500);
+    // ✅ FIX: Retry findTarget every 500 ms until found (max 5 attempts).
+    // Old code used a one-shot 500 ms timeout — if Spline hadn't finished
+    // parsing object names yet (common on slow connections), the head-tracking
+    // silently never activated for the entire session.
+    let probeAttempts = 0;
+    const probeInterval = setInterval(() => {
+      if (trackedObj || probeAttempts >= 5) {
+        clearInterval(probeInterval);
+        return;
+      }
+      trackedObj = findTarget();
+      probeAttempts++;
+    }, 500);
 
     const isHeadObject = () => HEAD_NAMES.includes(trackedObj?.name ?? "");
 
+    // ── Shared pause state for the RAF loop ──────────────────────────────────
+    let isPageVisible = !document.hidden;
+    let isInView      = true;   // assume visible until IO says otherwise
+
+    // ── Safe resume helper ───────────────────────────────────────────────────
+    const resumeLoop = () => {
+      if (rafRef.current === 0 && isPageVisible && isInView) {
+        rafRef.current = requestAnimationFrame(tick);
+      }
+    };
+
+    // ── RAF tick ─────────────────────────────────────────────────────────────
+    //
+    // ✅ FIX: Loop now truly stops when either condition is false.
+    // Previously tick() always called requestAnimationFrame(tick) at the end,
+    // running at 60 fps even when the page was hidden or the Hero section
+    // was off-screen (combined with Earth3D's loop, this doubled idle CPU).
+    //
     const tick = () => {
+      if (!isPageVisible || !isInView) {
+        rafRef.current = 0;  // sentinel — loop is stopped
+        return;
+      }
+
       const spline = appRef.current;
       if (spline && trackedObj) {
         current.current.yaw   += (target.current.yaw   - current.current.yaw)   * LERP;
@@ -175,16 +218,39 @@ export function SplineRobot({
           trackedObj.rotation.x = current.current.pitch * scale;
         } catch { /* object may have been GC'd */ }
       }
-      rafRef.current = requestAnimationFrame(tick);
+
+      rafRef.current = requestAnimationFrame(tick);  // reschedule after work
     };
 
     rafRef.current = requestAnimationFrame(tick);
 
+    // ── Visibility pause ─────────────────────────────────────────────────────
+    const onVisibility = () => {
+      isPageVisible = !document.hidden;
+      resumeLoop();
+    };
+    document.addEventListener("visibilitychange", onVisibility, { passive: true });
+
+    // ── IntersectionObserver — pause when canvas scrolls off-screen ──────────
+    let io: IntersectionObserver | null = null;
+    if (canvasRef.current) {
+      io = new IntersectionObserver(
+        ([entry]) => {
+          isInView = entry.isIntersecting;
+          resumeLoop();
+        },
+        { threshold: 0.05 },
+      );
+      io.observe(canvasRef.current);
+    }
+
     return () => {
-      clearTimeout(probeTimer);
+      clearInterval(probeInterval);
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = 0; }
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("touchmove", onTouchMove);
+      document.removeEventListener("visibilitychange", onVisibility);
+      io?.disconnect();
     };
   }, [ready]);
 
@@ -197,7 +263,6 @@ export function SplineRobot({
         position: "relative",
         width:    "100%",
         height:   heightValue,
-        // GPU layer created only after canvas is visible — saves VRAM until load
         transform: "translateZ(0)",
       }}
     >

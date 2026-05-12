@@ -132,7 +132,6 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground overflow-x-hidden;
-    /* Promote body to its own compositing layer — smoother momentum scroll on iOS */
     -webkit-overflow-scrolling: touch;
   }
 
@@ -180,12 +179,6 @@
   animation: marquee 30s linear infinite;
 }
 
-/* ── Magic cursor ──────────────────────────────────────────────────────────── */
-html.magic-cursor-active,
-html.magic-cursor-active * {
-  cursor: none !important;
-}
-
 /* ── Radial gradient helper ────────────────────────────────────────────────── */
 .bg-gradient-radial {
   background: radial-gradient(circle at center, var(--tw-gradient-stops));
@@ -209,23 +202,11 @@ body {
 }
 
 /* ── GPU acceleration for fixed/animated overlays ─────────────────────────── */
-/*
-   will-change is already applied inline on the robot and cursor divs.
-   Adding transform3d here via CSS ensures the browser creates compositing
-   layers even before the JS sets explicit transforms.
-*/
 .fixed[style*="will-change"] {
   transform: translateZ(0);
 }
 
 /* ── Content-visibility for off-screen sections ───────────────────────────── */
-/*
-   content-visibility: auto tells the browser it can skip layout and paint
-   for sections not in the viewport. We pair it with contain-intrinsic-size
-   so the scrollbar height is stable before sections are rendered.
-   NOTE: this does NOT affect IntersectionObserver — Framer Motion's
-   whileInView works correctly with content-visibility.
-*/
 #about,
 #skills,
 #services,
@@ -249,12 +230,10 @@ body {
 
 /* ── Mobile touch optimisations ───────────────────────────────────────────── */
 @media (max-width: 768px) {
-  /* Avoid repaints from fixed children on every scroll tick */
   main {
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Slightly reduce blur radius — mobile GPUs struggle with heavy backdrop-blur */
   .backdrop-blur-2xl {
     --tw-backdrop-blur: blur(16px);
   }
@@ -263,19 +242,10 @@ body {
   }
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   ADDITIONS / OVERRIDES for index.css
-   Paste these at the very END of your existing index.css file.
-   (Everything above stays exactly as it is.)
-───────────────────────────────────────────────────────────────────────────── */
-
-/* ── Hero: full-bleed (no left sidebar offset) ────────────────────────────── */
-/*
-  The Hero section is full-bleed — it must NOT inherit the
-  md:pl-24 / lg:pl-32 padding that the content wrapper adds.
-  In App.tsx we moved <Hero /> OUTSIDE the constrained wrapper, so no
-  extra CSS override is needed here. This comment is left as a reminder.
-*/
+/* ── Hero: overflow guard ─────────────────────────────────────────────────── */
+#hero {
+  overflow: hidden;
+}
 
 /* ── Spline viewer: remove the default white watermark bar ──────────────────── */
 spline-viewer::part(logo),
@@ -283,7 +253,6 @@ spline-viewer::part(watermark) {
   display: none !important;
 }
 
-/* Hide the "built with Spline" badge that appears bottom-right */
 spline-viewer > div[class*="watermark"],
 spline-viewer > div[class*="logo"] {
   display: none !important;
@@ -323,11 +292,6 @@ spline-viewer > div[class*="logo"] {
   }
 }
 
-/* ── Prevent Spline from creating a horizontal scrollbar ────────────────────── */
-#hero {
-  overflow: hidden;
-}
-
 /* ── Ensure spline-viewer fills its parent div completely ────────────────────── */
 spline-viewer {
   display: block;
@@ -337,10 +301,31 @@ spline-viewer {
 
 /* ── Mobile: robot is decorative, reduce its visual weight ──────────────────── */
 @media (max-width: 767px) {
-  /* On mobile the Spline scene sits behind the text.
-     Shift it right and reduce opacity so the copy stays readable. */
   #hero .spline-wrap {
     opacity: 0.35;
     transform: translateX(15%);
   }
+}
+
+/*
+ * ✅ FIX: shimmer keyframe moved here from Experience.tsx.
+ *
+ *    The original Experience.tsx injected this via document.createElement('style')
+ *    at MODULE PARSE TIME — a synchronous DOM write that ran before React even
+ *    started, adding a forced style recalculation to the critical path.
+ *
+ *    Defining it here costs nothing extra — it's parsed alongside all other
+ *    CSS before any JS executes.
+ */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 3s ease infinite;
 }

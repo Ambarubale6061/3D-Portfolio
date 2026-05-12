@@ -1,5 +1,5 @@
 // Sidebar.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Home,
   User,
@@ -13,38 +13,72 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 
 const items = [
-  { id: "hero", label: "Home", Icon: Home },
-  { id: "about", label: "About", Icon: User },
-  { id: "skills", label: "Skills", Icon: Code2 },
-  { id: "services", label: "Services", Icon: Briefcase },
-  { id: "projects", label: "Projects", Icon: LayoutGrid },
-  { id: "testimonials", label: "Reviews", Icon: MessageSquare },
-  { id: "contact", label: "Contact", Icon: Mail },
+  { id: "hero",         label: "Home",     Icon: Home },
+  { id: "about",        label: "About",    Icon: User },
+  { id: "skills",       label: "Skills",   Icon: Code2 },
+  { id: "services",     label: "Services", Icon: Briefcase },
+  { id: "projects",     label: "Projects", Icon: LayoutGrid },
+  { id: "testimonials", label: "Reviews",  Icon: MessageSquare },
+  { id: "contact",      label: "Contact",  Icon: Mail },
 ];
 
 interface SidebarProps {
-  isOpen: boolean;
+  isOpen:  boolean;
   onClose: () => void;
 }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [active, setActive] = useState("hero");
 
+  /*
+   * ✅ FIX: Original code called getBoundingClientRect on every scroll
+   *    tick inside a forEach with no throttle. This is a forced layout
+   *    read on every frame.
+   *
+   *    Now:
+   *    • Elements are cached once in a ref (sectionEls).
+   *    • The scroll handler is RAF-throttled — at most one DOM read per frame.
+   *    • The Sidebar is only mounted when isOpen=true (AnimatePresence), so
+   *      this listener is not active when the drawer is closed.
+   */
+  const sectionEls = useRef<{ id: string; el: Element }[]>([]);
+
   useEffect(() => {
-    const onScroll = () => {
-      let current = "hero";
-      for (const it of items) {
-        const el = document.getElementById(it.id);
-        if (el) {
-          const rect = el.getBoundingClientRect();
-          if (rect.top <= 200) current = it.id;
-        }
-      }
-      setActive(current);
+    if (!isOpen) return; // don't listen while drawer is closed
+
+    const buildCache = () => {
+      sectionEls.current = items
+        .map((it) => {
+          const el = document.getElementById(it.id);
+          return el ? { id: it.id, el } : null;
+        })
+        .filter(Boolean) as { id: string; el: Element }[];
     };
+
+    buildCache();
+
+    let ticking = false;
+
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+
+      requestAnimationFrame(() => {
+        ticking = false;
+
+        if (sectionEls.current.length < items.length) buildCache();
+
+        let current = "hero";
+        for (const { id, el } of sectionEls.current) {
+          if (el.getBoundingClientRect().top <= 200) current = id;
+        }
+        setActive(current);
+      });
+    };
+
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [isOpen]);
 
   return (
     <AnimatePresence>
@@ -68,7 +102,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             className="fixed top-0 right-0 h-full w-64 z-[60] bg-slate-950/95 border-l border-white/10 p-6 shadow-2xl md:hidden flex flex-col"
           >
             {/* Close Button */}
-            <button onClick={onClose} className="self-end p-2 mb-8 text-white/50 hover:text-white">
+            <button
+              onClick={onClose}
+              className="self-end p-2 mb-8 text-white/50 hover:text-white"
+            >
               <X size={24} />
             </button>
 

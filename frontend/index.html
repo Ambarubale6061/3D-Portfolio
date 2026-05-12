@@ -7,36 +7,17 @@
   <title>Ambar — Portfolio</title>
   <meta name="description"
     content="Full Stack Developer crafting scalable apps, real-time systems, and AI-powered experiences." />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-  <!-- Preconnect to Google Fonts for faster resolution -->
+  <!-- "A" Letter Stylish Favicon -->
+  <!-- Neon Glass "A" Logo -->
+  <!-- Minimalist Apple-Style "A" -->
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><defs><linearGradient id='aGrad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' style='stop-color:%23000000;stop-opacity:1' /><stop offset='100%25' style='stop-color:%23444444;stop-opacity:1' /></linearGradient></defs><circle cx='50' cy='50' r='48' fill='white' stroke='%23eeeeee' stroke-width='2'/><text y='52%25' x='50%25' font-size='60' font-weight='900' font-family='Inter, sans-serif' fill='url(%23aGrad)' text-anchor='middle' dominant-baseline='central'>A</text></svg>" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
-  <!-- Inter font — display=swap prevents FOIT -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
     rel="stylesheet" />
-
-  <!--
-    ✅ REMOVED:
-      - <script src="three.min.js"> — This was the primary cause of ALL errors:
-          1. It loaded the DEPRECATED build/three.min.js (removed in r160+).
-          2. It created a GLOBAL window.THREE instance completely separate from
-             Vite's bundled copy, causing the "Multiple instances of Three.js"
-             warning from both three-globe and @splinetool/runtime.
-          3. The instance collision corrupted three-globe's method chain, causing
-             "barsData is not a function" because the Globe object was built
-             against one THREE instance but the renderer expected another.
-      - <script src="three-globe.min.js"> — Same issue; now bundled by Vite.
-      - <script type="module" src="spline-viewer.js"> — SplineRobot.tsx uses
-          @splinetool/runtime directly on a <canvas>, so the web component
-          script is unnecessary and was loading yet another THREE copy.
-
-    ✅ three, three-globe, and @splinetool/runtime are all imported as ES
-       modules inside the app bundle. Vite's `resolve.dedupe: ["three"]` in
-       vite.config.ts guarantees exactly one copy of Three.js across all
-       packages — no globals, no conflicts.
-  -->
 </head>
 
 <body>
