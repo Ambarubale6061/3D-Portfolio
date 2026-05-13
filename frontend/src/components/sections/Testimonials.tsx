@@ -49,16 +49,6 @@ const testimonials: Testimonial[] = [
     rating:      5,
     text: "Ambar is passionate about development and consistently delivers high-quality work. His dedication, creativity, and teamwork skills make him stand out as a developer.",
   },
-    {
-    name:        "Aniket Kolhe",
-    role:        "Frontend Developer",
-    company:     "Freelance",
-    image:       "/aniket.jpg",
-    gradient:    "from-violet-400 via-purple-500 to-indigo-600",
-    accentColor: "violet",
-    rating:      5,
-    text: "Ambar is a highly dedicated full-stack developer. He has an amazing ability to turn complex problems into simple, functional solutions. Working with him is always a pleasure.",
-  },
   {
     name:        "Amrut Kshirsagar",
     role:        "Staff Engineer",
@@ -232,6 +222,16 @@ const TestimonialCard = memo(function TestimonialCard({
         style={{ opacity: hovered ? 1 : 0.28, transition: "opacity 0.55s ease" }}
       />
 
+      {/* ── Company name – top left ── */}
+      {testimonial.company && (
+        <p
+          className={`text-[12px] sm:text-[14px] font-semibold tracking-[0.18em] uppercase mb-2 bg-gradient-to-r ${testimonial.gradient} bg-clip-text text-transparent`}
+          style={{ opacity: hovered ? 1 : 0.7, transition: "opacity 0.55s ease" }}
+        >
+          {testimonial.company}
+        </p>
+      )}
+
       {/* ── Star rating ── */}
       {stars.length > 0 && (
         <div className="flex items-center gap-[3px] mb-3">
@@ -284,7 +284,6 @@ const TestimonialCard = memo(function TestimonialCard({
           </p>
           <p className="text-[9px] sm:text-[10px] tracking-[0.12em] text-white/38 uppercase mt-[2px] sm:mt-[3px] truncate font-medium">
             {testimonial.role}
-            {testimonial.company ? ` · ${testimonial.company}` : ""}
           </p>
         </div>
 
