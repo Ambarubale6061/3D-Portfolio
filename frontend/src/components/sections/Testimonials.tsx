@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useRef, useState } from "react";
+import { memo, useRef, useState, useEffect, useCallback } from "react";
 import { motion, useInView } from "framer-motion";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -20,17 +20,6 @@ type Testimonial = {
 
 const testimonials: Testimonial[] = [
   {
-  name:        "Aniket Kolhe",
-  role:        "Frontend Developer",
-  company:     "Freelance",
-  image:       "/aniket.jpg",
-  gradient:    "from-violet-400 via-purple-500 to-indigo-600",
-  accentColor: "violet",
-  rating:      5,
-  text: "Ambar is a highly dedicated full-stack developer. He has an amazing ability to turn complex problems into simple, functional solutions. Working with him is always a pleasure.",
-},
-
-  {
     name:        "Pushkraj Musmade",
     role:        "Software Engineer",
     company:     "BharatGo",
@@ -39,8 +28,8 @@ const testimonials: Testimonial[] = [
     accentColor: "pink",
     rating:      5,
     text: "Ambar combines technical knowledge with a strong understanding of modern web design. He is dependable, hardworking, and always ready to learn new technologies.",
-},
-{
+  },
+  {
     name:        "Amol Kshirsagar",
     role:        "Digital Engineering Staff Engineer",
     company:     "NTT DATA",
@@ -49,8 +38,8 @@ const testimonials: Testimonial[] = [
     accentColor: "purple",
     rating:      5,
     text: "Working with Ambar was a smooth experience. He writes clean code, understands project requirements quickly, and always focuses on building scalable and responsive applications.",
-},
-{
+  },
+  {
     name:        "Durgesh Gadekar",
     role:        "AEM Producer",
     company:     "Accenture",
@@ -59,8 +48,18 @@ const testimonials: Testimonial[] = [
     accentColor: "green",
     rating:      5,
     text: "Ambar is passionate about development and consistently delivers high-quality work. His dedication, creativity, and teamwork skills make him stand out as a developer.",
-},
-{
+  },
+    {
+    name:        "Aniket Kolhe",
+    role:        "Frontend Developer",
+    company:     "Freelance",
+    image:       "/aniket.jpg",
+    gradient:    "from-violet-400 via-purple-500 to-indigo-600",
+    accentColor: "violet",
+    rating:      5,
+    text: "Ambar is a highly dedicated full-stack developer. He has an amazing ability to turn complex problems into simple, functional solutions. Working with him is always a pleasure.",
+  },
+  {
     name:        "Amrut Kshirsagar",
     role:        "Staff Engineer",
     company:     "Altimetrik",
@@ -71,15 +70,15 @@ const testimonials: Testimonial[] = [
     text: "Ambar combines technical knowledge with a strong understanding of modern web design. He is dependable, hardworking, and always ready to learn new technologies.",
   },
   {
-  name:        "Suresh Kandelkar",
-  role:        "Android Developer",
-  company:     "Freelance",
-  image:       "/suresh.jpg",
-  gradient:    "from-emerald-400 via-green-500 to-teal-600",
-  accentColor: "emerald",
-  rating:      5,
-  text: "Ambar is reliable, skilled, and always eager to learn new technologies. He's the kind of developer who makes teamwork smooth and results outstanding.",
-},
+    name:        "Suresh Kandelkar",
+    role:        "Android Developer",
+    company:     "Freelance",
+    image:       "/suresh.jpg",
+    gradient:    "from-emerald-400 via-green-500 to-teal-600",
+    accentColor: "emerald",
+    rating:      5,
+    text: "Ambar is reliable, skilled, and always eager to learn new technologies. He's the kind of developer who makes teamwork smooth and results outstanding.",
+  },
 ];
 
 // ─── Accent maps ──────────────────────────────────────────────────────────────
@@ -310,7 +309,7 @@ const TestimonialCard = memo(function TestimonialCard({
   );
 });
 
-// ─── MarqueeTrack ─────────────────────────────────────────────────────────────
+// ─── MarqueeTrack (infinite loop, exactly one duplicated set) ─────────────────
 
 function MarqueeTrack({
   items,
@@ -321,56 +320,123 @@ function MarqueeTrack({
   paused:  boolean;
   onHover: (v: boolean) => void;
 }) {
-  const doubled = [...items, ...items];
-  const scrollRef = useRef<HTMLDivElement>(null);
-  
-  // Drag to scroll logic
-  const [isDown, setIsDown] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const innerRef    = useRef<HTMLDivElement>(null);
+  const rafRef      = useRef<number | null>(null);
+  const speed       = 2.1; // pixels per frame (adjust for desired speed)
 
+  // Drag state
+  const isDown     = useRef(false);
+  const startX     = useRef(0);
+  const scrollLeft = useRef(0);
+  const [dragging, setDragging] = useState(false); // to show grabbing cursor
+
+  // Half width (one full set) – recalculated live
+  const getHalfWidth = useCallback(() => {
+    const inner = innerRef.current;
+    if (!inner) return 0;
+    return inner.scrollWidth / 2;
+  }, []);
+
+  // Resize observer to keep half-width updated (array length never changes, but widths may)
+  useEffect(() => {
+    const inner = innerRef.current;
+    if (!inner) return;
+    const observer = new ResizeObserver(() => {
+      // No state needed; getHalfWidth reads live
+    });
+    observer.observe(inner);
+    return () => observer.disconnect();
+  }, []);
+
+  // Auto‑scroll loop
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const animate = () => {
+      const half = getHalfWidth();
+      if (half <= 0) {
+        rafRef.current = requestAnimationFrame(animate);
+        return;
+      }
+
+      // Increment scroll position
+      container.scrollLeft += speed;
+
+      // Seamless wrap: when we've scrolled one full set, jump back by exactly one set
+      if (container.scrollLeft >= half) {
+        container.scrollLeft -= half;
+      }
+
+      rafRef.current = requestAnimationFrame(animate);
+    };
+
+    // Start/stop based on paused and dragging
+    if (!paused && !dragging) {
+      rafRef.current = requestAnimationFrame(animate);
+    } else {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    }
+
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [paused, dragging, getHalfWidth]);
+
+  // Drag handlers
   const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDown(true);
+    const container = containerRef.current;
+    if (!container) return;
+    isDown.current = true;
+    setDragging(true);
     onHover(true);
-    setStartX(e.pageX - (scrollRef.current?.offsetLeft || 0));
-    setScrollLeft(scrollRef.current?.scrollLeft || 0);
+    startX.current = e.pageX - container.offsetLeft;
+    scrollLeft.current = container.scrollLeft;
   };
 
   const handleMouseLeave = () => {
-    setIsDown(false);
-    onHover(false);
+    if (isDown.current) {
+      isDown.current = false;
+      setDragging(false);
+      onHover(false);
+    }
   };
 
   const handleMouseUp = () => {
-    setIsDown(false);
-    onHover(false);
+    if (isDown.current) {
+      isDown.current = false;
+      setDragging(false);
+      onHover(false);
+    }
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDown || !scrollRef.current) return;
+    if (!isDown.current) return;
+    const container = containerRef.current;
+    if (!container) return;
     e.preventDefault();
-    const x = e.pageX - (scrollRef.current.offsetLeft || 0);
-    const walk = (x - startX) * 1.5; // Scroll speed
-    scrollRef.current.scrollLeft = scrollLeft - walk;
+    const x = e.pageX - container.offsetLeft;
+    const walk = (x - startX.current) * 1.5;
+    container.scrollLeft = scrollLeft.current - walk;
   };
 
+  // Duplicate exactly once → total cards = 2 × original (no 4–5 copies)
+  const doubled = [...items, ...items];
+
   return (
-    <div 
-      ref={scrollRef}
+    <div
+      ref={containerRef}
       onMouseDown={handleMouseDown}
       onMouseLeave={handleMouseLeave}
       onMouseUp={handleMouseUp}
       onMouseMove={handleMouseMove}
-      className={`overflow-x-hidden cursor-grab ${isDown ? 'cursor-grabbing' : ''}`}
+      className={`overflow-x-hidden cursor-grab ${dragging ? 'cursor-grabbing' : ''}`}
     >
-      <div
-  className="flex py-5 w-max"
-  style={{
-    display: "flex",
-    animation: "testimonials-marquee 60s linear infinite",
-    animationPlayState: paused ? "paused" : "running",
-  }}
->
+      <div ref={innerRef} className="flex py-5 w-max">
         {doubled.map((t, i) => (
           <TestimonialCard
             key={i}
@@ -421,14 +487,7 @@ export function Testimonials() {
           margin: 0 var(--card-margin);
         }
 
-       @keyframes testimonials-marquee {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
+        /* No CSS animation – we use a JS loop for seamless infinite scroll */
       `}</style>
 
       <section
