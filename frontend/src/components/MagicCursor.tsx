@@ -26,22 +26,38 @@
  *   - Typed-array particle pool with GC-free in-place compaction.
  *   - RAF loop runs only for the canvas particle trail.
  *   - Visibility-change pause stops RAF when tab is hidden.
- *   - Touch-only devices bail out entirely — no DOM nodes mounted.
+ *   - Touch-only / mobile devices bail out entirely — no DOM nodes mounted.
+ *     Detection runs client-side only (useEffect) to avoid SSR mismatches.
  */
 
 import { useEffect, useRef, useState } from "react";
 
-// ─── Detect pointer capability once at module load (SSR-safe) ────────────────
-function isTouchOnlyDevice(): boolean {
+// ─── Detect pointer capability (must run client-side only) ───────────────────
+function isTouchOrMobileDevice(): boolean {
   if (typeof window === "undefined") return true;
-  return (
-    window.matchMedia("(hover: none)").matches ||
-    window.matchMedia("(pointer: coarse)").matches
-  );
+
+  // Primary signals: CSS interaction media features
+  const hoverNone    = window.matchMedia("(hover: none)").matches;
+  const pointerCoarse = window.matchMedia("(pointer: coarse)").matches;
+
+  // Secondary signal: touch points reported by the browser
+  const hasTouch = navigator.maxTouchPoints > 0;
+
+  // A device is considered mobile/touch-only when it lacks fine-pointer
+  // hover and reports touch capability.
+  return (hoverNone || pointerCoarse) && hasTouch;
 }
 
+// ─── Public component ─────────────────────────────────────────────────────────
 export function MagicCursor() {
-  const [enabled] = useState<boolean>(() => !isTouchOnlyDevice());
+  // Start as false (safe for SSR); flip to true only if client says desktop.
+  const [enabled, setEnabled] = useState(false);
+
+  useEffect(() => {
+    // Runs only in the browser — no SSR window-undefined risk.
+    setEnabled(!isTouchOrMobileDevice());
+  }, []);
+
   if (!enabled) return null;
   return <MagicCursorInner />;
 }
@@ -53,7 +69,7 @@ const HUE_B   = 275;
 const COLOR_A = "hsl(185,100%,75%)";
 const COLOR_B = "hsl(275,100%,75%)";
 
-// ─── Inner component only mounts on desktop ───────────────────────────────────
+// ─── Inner component — only ever mounts on desktop ───────────────────────────
 function MagicCursorInner() {
   const ringRef   = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -73,7 +89,8 @@ function MagicCursorInner() {
   const paused = useRef(false);
 
   useEffect(() => {
-    if (isTouchOnlyDevice()) return;
+    // Extra guard: if somehow this component mounts on a touch device, exit.
+    if (isTouchOrMobileDevice()) return;
 
     const ring   = ringRef.current!;
     const canvas = canvasRef.current!;

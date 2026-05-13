@@ -37,7 +37,7 @@ const testimonials: Testimonial[] = [
     gradient:    "from-violet-400 via-purple-500 to-indigo-600",
     accentColor: "purple",
     rating:      5,
-    text: "Working with Ambar was a smooth experience. He writes clean code, understands project requirements quickly, and always focuses on building scalable and responsive applications.",
+    text: "Ambar is a focused frontend developer with a good understanding of modern UI practices He builds clean and responsive interfaces and is always eager to learn and improve.",
   },
   {
     name:        "Durgesh Gadekar",
@@ -57,7 +57,7 @@ const testimonials: Testimonial[] = [
     gradient:    "from-orange-400 via-amber-500 to-yellow-500",
     accentColor: "orange",
     rating:      5,
-    text: "Ambar combines technical knowledge with a strong understanding of modern web design. He is dependable, hardworking, and always ready to learn new technologies.",
+     text: "Ambar is a driven and talented full-stack developer with a great problem-solving mindset. He consistently delivers high-quality work and has a strong grip on technologies like React, Node.js, and modern web tools. His dedication and ability to turn ideas into real applications truly set him apart.",
   },
   {
     name:        "Suresh Kandelkar",
